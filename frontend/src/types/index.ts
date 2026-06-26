@@ -1,7 +1,7 @@
 export interface Student {
     _id: string
     name: string
-    class: string
+    class_grade: string
     school_id: string
     school_name: string
     absences_this_month: number
@@ -10,6 +10,7 @@ export interface Student {
     science_score: number
     seasonal_flag: boolean
     risk_score: number
+    risk_level: "high" | "medium" | "low"
     top_signals: string[]
     intervention_action?: string
     status: "pending" | "actioned"

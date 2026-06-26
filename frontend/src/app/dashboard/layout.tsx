@@ -29,15 +29,35 @@ export default function DashboardLayout({
                         <p className="text-xs text-muted-foreground">Block Education Dashboard</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => {
-                        localStorage.removeItem("token")
-                        window.location.href = "/auth"
-                    }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    Sign out
-                </button>
+                <nav className="flex items-center gap-4">
+                    <a
+                        href="/dashboard"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Home
+                    </a>
+                    <a
+                        href="/dashboard/students"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Students
+                    </a>
+                    <a
+                        href="/dashboard/ocr"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Scan marks
+                    </a>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem("token")
+                            window.location.href = "/auth"
+                        }}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Sign out
+                    </button>
+                </nav>
             </header>
             <main className="max-w-6xl mx-auto px-6 py-8">
                 {children}

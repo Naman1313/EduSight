@@ -37,6 +37,14 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
               seasonal_flag: row.seasonal_flag === "True" || row.seasonal_flag === "true",
             })
             const { risk_score, risk_level, top_signals } = mlRes.data
+
+            const suggestRes = await axios.post(`${process.env.ML_API_URL}/suggest`, {
+              risk_score,
+              top_signals,
+              name: row.name,
+            })
+            const intervention_action = suggestRes.data.action
+
             await Student.findOneAndUpdate(
               { student_id: row.student_id },
               {
@@ -49,6 +57,7 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
                 risk_score,
                 risk_level,
                 top_signals,
+                intervention_action,
               },
               { upsert: true, new: true }
             )
@@ -59,6 +68,36 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
         }
         res.json({ message: `Processed ${saved} students successfully` })
       })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.get("/:id", authMiddleware, async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id)
+    if (!student) return res.status(404).json({ message: "Student not found" })
+    res.json(student)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.post("/:id/action", authMiddleware, async (req, res) => {
+  try {
+    const { intervention_action, status } = req.body
+    const update = {}
+    if (intervention_action) update.intervention_action = intervention_action
+    if (status) update.status = status
+
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      update,
+      { new: true }
+    )
+
+    if (!student) return res.status(404).json({ message: "Student not found" })
+    res.json(student)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
