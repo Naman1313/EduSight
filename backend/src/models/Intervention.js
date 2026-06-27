@@ -6,10 +6,18 @@ const interventionSchema = new mongoose.Schema({
   school_name: String,
   risk_score: Number,
   risk_level: String,
+  risk_score_before: Number,
+  risk_level_before: String,
+  risk_score_after: Number,
+  followup_date: Date,
   action_taken: String,
   actioned_by: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   notes: String,
-  status: { type: String, enum: ["pending", "in_progress", "completed"], default: "pending" },
+  status: {
+    type: String,
+    enum: ["pending", "in_progress", "completed"],
+    default: "pending"
+  },
 }, { timestamps: true })
 
 module.exports = mongoose.model("Intervention", interventionSchema)

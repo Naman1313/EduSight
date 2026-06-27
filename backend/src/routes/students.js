@@ -45,22 +45,26 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
             })
             const intervention_action = suggestRes.data.action
 
+            const existingStudent = await Student.findOne({ student_id: row.student_id })
+            const historyEntry = { risk_score, risk_level, recorded_at: new Date() }
+
             await Student.findOneAndUpdate(
-              { student_id: row.student_id },
-              {
-                ...row,
-                absences_this_month: parseInt(row.absences_this_month),
-                absence_streak: parseInt(row.absence_streak),
-                math_score: parseFloat(row.math_score),
-                science_score: parseFloat(row.science_score),
-                seasonal_flag: row.seasonal_flag === "True" || row.seasonal_flag === "true",
-                risk_score,
-                risk_level,
-                top_signals,
-                intervention_action,
-              },
-              { upsert: true, new: true }
-            )
+            { student_id: row.student_id },
+            {
+              ...row,
+              absences_this_month: parseInt(row.absences_this_month),
+              absence_streak: parseInt(row.absence_streak),
+              math_score: parseFloat(row.math_score),
+              science_score: parseFloat(row.science_score),
+              seasonal_flag: row.seasonal_flag === "True" || row.seasonal_flag === "true",
+              risk_score,
+              risk_level,
+              top_signals,
+              intervention_action,
+              $push: { risk_history: historyEntry }
+            },
+            { upsert: true, new: true }
+          )
             saved++
           } catch (e) {
             console.error("Error processing student:", row.student_id, e.message)
@@ -96,6 +100,16 @@ router.post("/:id/action", authMiddleware, async (req, res) => {
       { new: true }
     )
 
+    if (!student) return res.status(404).json({ message: "Student not found" })
+    res.json(student)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.get("/:id/history", authMiddleware, async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id).select("name risk_history risk_score risk_level")
     if (!student) return res.status(404).json({ message: "Student not found" })
     res.json(student)
   } catch (err) {

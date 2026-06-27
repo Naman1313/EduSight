@@ -1,5 +1,11 @@
 const mongoose = require("mongoose")
 
+const riskHistorySchema = new mongoose.Schema({
+  risk_score: Number,
+  risk_level: String,
+  recorded_at: { type: Date, default: Date.now }
+})
+
 const studentSchema = new mongoose.Schema({
   student_id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
@@ -17,6 +23,7 @@ const studentSchema = new mongoose.Schema({
   top_signals: [String],
   intervention_action: String,
   status: { type: String, enum: ["pending", "actioned"], default: "pending" },
+  risk_history: [riskHistorySchema],
 }, { timestamps: true })
 
 module.exports = mongoose.model("Student", studentSchema)

@@ -1,3 +1,9 @@
+export interface RiskHistory {
+    risk_score: number
+    risk_level: string
+    recorded_at: string
+}
+
 export interface Student {
     _id: string
     name: string
@@ -14,6 +20,7 @@ export interface Student {
     top_signals: string[]
     intervention_action?: string
     status: "pending" | "actioned"
+    risk_history: RiskHistory[]
 }
 
 export interface School {

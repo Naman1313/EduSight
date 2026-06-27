@@ -1,5 +1,6 @@
 "use client"
 
+import RiskTrendGraph from "@/components/shared/RiskTrendGraph"
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -199,6 +200,15 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                         </div>
                     </div>
                 )}
+
+                {/* Risk Trend Graph */}
+                <div className="border rounded-lg p-3 bg-muted/20">
+                    <RiskTrendGraph
+                        studentId={student._id}
+                        studentName={student.name}
+                        currentScore={student.risk_score}
+                    />
+                </div>
 
                 {/* Action Box */}
                 {!actioned && (

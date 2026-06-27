@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Menu, X } from "lucide-react"
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher"
 
 export default function DashboardLayout({
     children,
@@ -54,6 +55,7 @@ export default function DashboardLayout({
                                 {link.label}
                             </a>
                         ))}
+                        <LanguageSwitcher />
                         <button
                             onClick={() => {
                                 localStorage.removeItem("token")
@@ -87,6 +89,9 @@ export default function DashboardLayout({
                                 {link.label}
                             </a>
                         ))}
+                        <div className="py-2 px-2">
+                            <LanguageSwitcher />
+                        </div>
                         <button
                             onClick={() => {
                                 localStorage.removeItem("token")
