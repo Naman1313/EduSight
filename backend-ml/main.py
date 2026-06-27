@@ -7,6 +7,8 @@ import numpy as np
 import joblib
 import tempfile
 import os
+from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
 
 app = FastAPI(title="EduSight ML API")
 
@@ -21,6 +23,18 @@ app.add_middleware(
 # Load model and features on startup
 model = joblib.load("model.pkl")
 FEATURES = joblib.load("features.pkl")
+
+# Load RAG components
+print("Loading RAG vector store...")
+rag_embeddings = HuggingFaceEmbeddings(
+    model_name="all-MiniLM-L6-v2",
+    model_kwargs={"device": "cpu"}
+)
+vectorstore = Chroma(
+    persist_directory="./chroma_db",
+    embedding_function=rag_embeddings
+)
+print("RAG vector store loaded!")
 
 class StudentInput(BaseModel):
     student_id: str
@@ -146,30 +160,56 @@ def suggest(data: dict):
 
     signals_text = ", ".join(signals) if signals else "general risk indicators"
 
+    query = f"intervention for student with {signals_text} dropout risk score {score}"
+    docs = vectorstore.similarity_search(query, k=3)
+    context = "\n\n".join([doc.page_content for doc in docs])
+
     if score >= 70:
         action = (
-            f"Schedule an immediate home visit for {name}. "
-            f"Key concerns: {signals_text}. "
-            "Coordinate with the parent on flexible attendance during harvest season. "
-            "Enroll in the Pratham remedial Math bridge program immediately."
+            f"IMMEDIATE ACTION REQUIRED for {name} (Risk Score: {score}/100)\n\n"
+            f"Key concerns identified: {signals_text}\n\n"
+            f"Recommended steps based on ASER/Pratham evidence:\n"
+            f"1. Conduct a home visit within 48 hours to meet parents/guardians\n"
+            f"2. Create a flexible attendance plan if harvest season is a factor\n"
+            f"3. Enroll {name} in Pratham's Teaching at the Right Level (TaRL) remedial program\n"
+            f"4. Check enrollment in PM-POSHAN mid-day meal scheme\n"
+            f"5. Schedule follow-up visit within 2 weeks to assess improvement\n\n"
+            f"Evidence base: {context[:300]}..."
         )
-        source = "Pratham Annual Report 2023, ASER 2022 intervention guidelines"
+        source = "ASER 2022 Report, Pratham TaRL Program Guidelines"
+        confidence = "high"
+
     elif score >= 40:
         action = (
-            f"Send a written notice to {name}'s parents regarding: {signals_text}. "
-            "Monitor attendance weekly for the next month. "
-            "Connect the student to the school counsellor."
+            f"MONITOR CLOSELY: {name} (Risk Score: {score}/100)\n\n"
+            f"Warning signs detected: {signals_text}\n\n"
+            f"Recommended steps:\n"
+            f"1. Send written attendance notice to parents this week\n"
+            f"2. Schedule a parent meeting at school within 10 days\n"
+            f"3. Connect {name} to school counsellor for academic support\n"
+            f"4. Monitor attendance weekly for the next month\n"
+            f"5. Consider peer learning group enrollment\n\n"
+            f"Evidence base: {context[:300]}..."
         )
-        source = "ASER 2022 early warning protocols"
+        source = "ASER 2022 Early Warning Protocols"
+        confidence = "medium"
+
     else:
         action = (
-            f"No immediate action needed for {name}. "
-            "Continue monthly attendance monitoring."
+            f"LOW RISK: {name} (Risk Score: {score}/100)\n\n"
+            f"No immediate action needed. Continue standard monitoring.\n\n"
+            f"Preventive steps:\n"
+            f"1. Include {name} in monthly attendance review\n"
+            f"2. Ensure enrollment in PM-POSHAN scheme\n"
+            f"3. Check in with teacher at next school visit\n\n"
+            f"Evidence base: {context[:200]}..."
         )
-        source = "Standard monitoring protocol"
+        source = "Standard Monitoring Protocol"
+        confidence = "low"
 
     return {
         "action": action,
         "source": source,
-        "confidence": "high" if score >= 70 else "medium" if score >= 40 else "low"
+        "confidence": confidence,
+        "retrieved_chunks": len(docs)
     }

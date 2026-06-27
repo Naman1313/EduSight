@@ -42,6 +42,13 @@ export default function DashboardLayout({
                     >
                         Students
                     </a>
+
+                    <a
+                        href="/dashboard/interventions"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Interventions
+                    </a>
                     <a
                         href="/dashboard/ocr"
                         className="text-xs text-muted-foreground hover:text-foreground transition-colors"

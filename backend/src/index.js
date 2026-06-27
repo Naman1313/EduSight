@@ -11,6 +11,7 @@ app.use(express.json())
 app.use("/api/auth", require("./routes/auth"))
 app.use("/api/students", require("./routes/students"))
 app.use("/api/schools", require("./routes/schools"))
+app.use("/api/interventions", require("./routes/interventions"))
 
 app.get("/", (req, res) => {
   res.json({ status: "EduSight Node API is running" })
