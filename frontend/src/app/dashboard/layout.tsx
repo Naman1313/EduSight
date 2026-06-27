@@ -44,11 +44,19 @@ export default function DashboardLayout({
                     </a>
 
                     <a
+                        href="/dashboard/schools"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Schools
+                    </a>
+
+                    <a
                         href="/dashboard/interventions"
                         className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Interventions
                     </a>
+
                     <a
                         href="/dashboard/ocr"
                         className="text-xs text-muted-foreground hover:text-foreground transition-colors"
