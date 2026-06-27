@@ -103,7 +103,7 @@ export default function DashboardPage() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card
                     className="cursor-pointer hover:border-primary/50 transition-colors"
                     onClick={() => window.location.href = "/dashboard/students"}

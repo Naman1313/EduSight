@@ -94,7 +94,7 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div
                     className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:bg-red-100 transition-colors"
                     onClick={() => setFilter("high")}
@@ -176,7 +176,7 @@ export default function StudentsPage() {
             )}
 
             {!loading && !error && filtered.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filtered.map((student) => (
                         <RiskCard
                             key={student._id}

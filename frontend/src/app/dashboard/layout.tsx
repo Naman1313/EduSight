@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Menu, X } from "lucide-react"
 
 export default function DashboardLayout({
     children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const router = useRouter()
+    const [menuOpen, setMenuOpen] = useState(false)
 
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -17,64 +19,88 @@ export default function DashboardLayout({
         }
     }, [router])
 
+    const navLinks = [
+        { href: "/dashboard", label: "Home" },
+        { href: "/dashboard/students", label: "Students" },
+        { href: "/dashboard/schools", label: "Schools" },
+        { href: "/dashboard/ocr", label: "Scan marks" },
+        { href: "/dashboard/interventions", label: "Interventions" },
+    ]
+
     return (
         <div className="min-h-screen bg-muted/40">
-            <header className="bg-background border-b px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                        <span className="text-primary-foreground text-xs font-bold">ES</span>
+            <header className="bg-background border-b px-4 md:px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                            <span className="text-primary-foreground text-xs font-bold">ES</span>
+                        </div>
+                        <div>
+                            <h1 className="font-semibold text-sm">EduSight</h1>
+                            <p className="text-xs text-muted-foreground hidden sm:block">
+                                Block Education Dashboard
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="font-semibold text-sm">EduSight</h1>
-                        <p className="text-xs text-muted-foreground">Block Education Dashboard</p>
-                    </div>
-                </div>
-                <nav className="flex items-center gap-4">
-                    <a
-                        href="/dashboard"
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Home
-                    </a>
-                    <a
-                        href="/dashboard/students"
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Students
-                    </a>
 
-                    <a
-                        href="/dashboard/schools"
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Schools
-                    </a>
+                    {/* Desktop nav */}
+                    <nav className="hidden md:flex items-center gap-4">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {link.label}
+                            </a>
+                        ))}
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem("token")
+                                window.location.href = "/auth"
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Sign out
+                        </button>
+                    </nav>
 
-                    <a
-                        href="/dashboard/interventions"
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Interventions
-                    </a>
-
-                    <a
-                        href="/dashboard/ocr"
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Scan marks
-                    </a>
+                    {/* Mobile hamburger */}
                     <button
-                        onClick={() => {
-                            localStorage.removeItem("token")
-                            window.location.href = "/auth"
-                        }}
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+                        onClick={() => setMenuOpen(!menuOpen)}
                     >
-                        Sign out
+                        {menuOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
-                </nav>
+                </div>
+
+                {/* Mobile menu */}
+                {menuOpen && (
+                    <nav className="md:hidden mt-3 pt-3 border-t flex flex-col gap-1">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-muted"
+                                onClick={() => setMenuOpen(false)}
+                            >
+                                {link.label}
+                            </a>
+                        ))}
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem("token")
+                                window.location.href = "/auth"
+                            }}
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-muted text-left"
+                        >
+                            Sign out
+                        </button>
+                    </nav>
+                )}
             </header>
-            <main className="max-w-6xl mx-auto px-6 py-8">
+
+            <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
                 {children}
             </main>
         </div>
