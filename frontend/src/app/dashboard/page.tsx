@@ -1,5 +1,6 @@
 "use client"
 
+import { SkeletonStatCard, SkeletonSchoolRow } from "@/components/shared/SkeletonCard"
 import { useState, useEffect } from "react"
 import {
     Upload, FileText, CheckCircle, AlertCircle,
@@ -31,11 +32,13 @@ export default function DashboardPage() {
     const [error, setError] = useState("")
     const [stats, setStats] = useState<Stats | null>(null)
     const [schools, setSchools] = useState<SchoolStat[]>([])
+    const [statsLoading, setStatsLoading] = useState(true)
     const { t } = useTranslations()
 
     useEffect(() => { fetchStats() }, [])
 
     const fetchStats = async () => {
+        setStatsLoading(true)
         try {
             const res = await fetch("http://localhost:5000/api/schools/stats", {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -43,6 +46,7 @@ export default function DashboardPage() {
             const data = await res.json()
             if (res.ok) { setStats(data.stats); setSchools(data.schools) }
         } catch { console.error("Could not fetch stats") }
+        finally { setStatsLoading(false) }
     }
 
     const handleFile = (f: File) => {
@@ -116,271 +120,267 @@ export default function DashboardPage() {
 
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {statCards.map((card) => (
-                    <div
-                        key={card.label}
-                        className="stat-card"
-                        onClick={() => window.location.href = card.href}
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div
+                {statsLoading ? (
+                    [1, 2, 3].map((i) => <SkeletonStatCard key={i} />)
+                ) : (
+                    statCards.map((card) => (
+                        <div
+                            key={card.label}
+                            className="stat-card"
+                            onClick={() => window.location.href = card.href}
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <div
+                                    style={{
+                                        width: "36px",
+                                        height: "36px",
+                                        borderRadius: "0.75rem",
+                                        background: "var(--neu-bg)",
+                                        boxShadow: "var(--shadow-raised-sm)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <card.icon size={16} style={{ color: card.color }} />
+                                </div>
+                                <ArrowRight size={14} style={{ color: "var(--text-muted)" }} />
+                            </div>
+                            <p style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>
+                                {card.label}
+                            </p>
+                            <p
+                                className="risk-score-display"
                                 style={{
-                                    width: "36px",
-                                    height: "36px",
-                                    borderRadius: "0.75rem",
-                                    background: "var(--neu-bg)",
-                                    boxShadow: "var(--shadow-raised-sm)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
+                                    fontSize: "2.25rem",
+                                    color: card.color,
+                                    lineHeight: 1.1,
+                                    margin: "4px 0",
                                 }}
                             >
-                                <card.icon size={16} style={{ color: card.color }} />
-                            </div>
-                            <ArrowRight size={14} style={{ color: "var(--text-muted)" }} />
+                                {card.value}
+                            </p>
+                            <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>{card.sub}</p>
                         </div>
-                        <p style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>
-                            {card.label}
-                        </p>
-                        <p
-                            className="risk-score-display"
-                            style={{
-                                fontSize: "2.25rem",
-                                color: card.color,
-                                lineHeight: 1.1,
-                                margin: "4px 0",
-                            }}
-                        >
-                            {card.value}
-                        </p>
-                        <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>{card.sub}</p>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
 
             {/* School overview */}
             {schools.length > 0 && (
-        <div
-          style={{
-            background: "var(--neu-bg)",
-            boxShadow: "var(--shadow-raised)",
-            borderRadius: "1.25rem",
-            padding: "1.5rem",
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="section-label">{t.dashboard.schoolOverview}</p>
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginTop: "2px" }}>
-                {t.dashboard.riskBreakdown}
-              </p>
-            </div>
-            <a
-              href="/dashboard/schools"
-              style={{
-                fontSize: "12px",
-                color: "var(--accent-blue)",
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
-              View all →
-            </a>
-          </div>
-          <div className="space-y-3">
-            {schools.map((school) => (
-              <div
-                key={school.school_id}
-                className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all"
-                style={{ boxShadow: "var(--shadow-inset-sm)" }}
-                onClick={() => window.location.href = `/dashboard/students?school=${school.school_id}`}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-raised-sm)"
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-inset-sm)"
-                }}
-              >
-                <div>
-                  <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
-                    {school.school_name}
-                  </p>
-                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
-                    {school.total} students
-                  </p>
+                <div
+                    style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "var(--shadow-raised)",
+                        borderRadius: "1.25rem",
+                        padding: "1.5rem",
+                    }}
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <p className="section-label">{t.dashboard.schoolOverview}</p>
+                            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginTop: "2px" }}>
+                                {t.dashboard.riskBreakdown}
+                            </p>
+                        </div>
+                        <a
+                            href="/dashboard/schools"
+                            style={{
+                                fontSize: "12px",
+                                color: "var(--accent-blue)",
+                                fontWeight: 500,
+                                textDecoration: "none",
+                            }}
+                        >
+                            View all →
+                        </a>
+                    </div>
+                    <div className="space-y-3">
+                        {statsLoading ? (
+                            [1, 2, 3].map((i) => <SkeletonSchoolRow key={i} />)
+                        ) : (
+                            schools.map((school) => (
+                                <div
+                                    key={school.school_id}
+                                    className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all"
+                                    style={{ boxShadow: "var(--shadow-inset-sm)" }}
+                                    onClick={() => window.location.href = `/dashboard/students?school=${school.school_id}`}
+                                    onMouseEnter={(e) => {
+                                        (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-raised-sm)"
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-inset-sm)"
+                                    }}
+                                >
+                                    <div>
+                                        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
+                                            {school.school_name}
+                                        </p>
+                                        <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                                            {school.total} students
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {school.high > 0 && (
+                                            <span style={{
+                                                fontSize: "11px", padding: "3px 10px", borderRadius: "999px",
+                                                background: "var(--accent-red-light)", color: "var(--accent-red)", fontWeight: 600,
+                                            }}>
+                                                {school.high} high
+                                            </span>
+                                        )}
+                                        {school.medium > 0 && (
+                                            <span style={{
+                                                fontSize: "11px", padding: "3px 10px", borderRadius: "999px",
+                                                background: "var(--accent-amber-light)", color: "var(--accent-amber)", fontWeight: 600,
+                                            }}>
+                                                {school.medium} mid
+                                            </span>
+                                        )}
+                                        {school.low > 0 && (
+                                            <span style={{
+                                                fontSize: "11px", padding: "3px 10px", borderRadius: "999px",
+                                                background: "var(--accent-green-light)", color: "var(--accent-green)", fontWeight: 600,
+                                            }}>
+                                                {school.low} low
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {school.high > 0 && (
-                    <span style={{
-                      fontSize: "11px",
-                      padding: "3px 10px",
-                      borderRadius: "999px",
-                      background: "var(--accent-red-light)",
-                      color: "var(--accent-red)",
-                      fontWeight: 600,
-                    }}>
-                      {school.high} high
-                    </span>
-                  )}
-                  {school.medium > 0 && (
-                    <span style={{
-                      fontSize: "11px",
-                      padding: "3px 10px",
-                      borderRadius: "999px",
-                      background: "var(--accent-amber-light)",
-                      color: "var(--accent-amber)",
-                      fontWeight: 600,
-                    }}>
-                      {school.medium} mid
-                    </span>
-                  )}
-                  {school.low > 0 && (
-                    <span style={{
-                      fontSize: "11px",
-                      padding: "3px 10px",
-                      borderRadius: "999px",
-                      background: "var(--accent-green-light)",
-                      color: "var(--accent-green)",
-                      fontWeight: 600,
-                    }}>
-                      {school.low} low
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-    )}
+            )}
 
-{/* Upload card */ }
-<div
-    style={{
-        background: "var(--neu-bg)",
-        boxShadow: "var(--shadow-raised)",
-        borderRadius: "1.25rem",
-        padding: "1.5rem",
-    }}
->
-    <p className="section-label mb-1">{t.dashboard.uploadTitle}</p>
-    <p style={{
-        fontSize: "14px",
-        fontWeight: 600,
-        color: "var(--text-primary)",
-        marginBottom: "4px",
-    }}>
-        {t.dashboard.uploadSubtitle}
-    </p>
-    <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
-        Upload attendance CSV to generate AI-powered dropout risk scores for all students.
-    </p>
-
-    <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => document.getElementById("csv-input")?.click()}
-        style={{
-            boxShadow: dragOver
-                ? `inset 3px 3px 8px #C4CAD4, inset -3px -3px 8px #FFFFFF, inset 0 0 0 2px var(--accent-blue)`
-                : "var(--shadow-inset)",
-            borderRadius: "1rem",
-            padding: "2.5rem",
-            textAlign: "center",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            background: dragOver ? "var(--accent-blue-light)" : "var(--neu-bg)",
-        }}
-    >
-        <input
-            id="csv-input"
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
-        />
-        <div
-            style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "0.75rem",
-                background: "var(--neu-bg)",
-                boxShadow: "var(--shadow-raised-sm)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 12px",
-            }}
-        >
-            <Upload size={20} style={{ color: "var(--accent-blue)" }} />
-        </div>
-        <p style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-primary)" }}>
-            {t.dashboard.dropCSV}
-        </p>
-        <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
-            Supports: student_id, name, class, absences, marks columns
-        </p>
-    </div>
-
-    {error && (
-        <div
-            className="flex items-center gap-2 mt-3 p-3 rounded-xl"
-            style={{ background: "var(--accent-red-light)", color: "var(--accent-red)", fontSize: "13px" }}
-        >
-            <AlertCircle size={14} /> {error}
-        </div>
-    )}
-
-    {file && !uploaded && (
-        <div
-            className="flex items-center justify-between mt-3 p-3 rounded-xl"
-            style={{ boxShadow: "var(--shadow-inset-sm)" }}
-        >
-            <div className="flex items-center gap-2">
-                <FileText size={14} style={{ color: "var(--text-muted)" }} />
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
-                    {file.name}
-                </span>
-                <span style={{
-                    fontSize: "11px",
-                    padding: "2px 8px",
-                    borderRadius: "999px",
-                    background: "var(--accent-blue-light)",
-                    color: "var(--accent-blue)",
-                }}>
-                    {(file.size / 1024).toFixed(1)} KB
-                </span>
-            </div>
-            <button
-                className="neu-btn-primary px-4 py-2"
-                style={{ fontSize: "12px" }}
-                onClick={handleUpload}
-                disabled={uploading}
-            >
-                {uploading ? "Uploading..." : "Upload"}
-            </button>
-        </div>
-    )}
-
-    {uploaded && (
-        <div className="mt-3 space-y-3">
+            {/* Upload card */}
             <div
-                className="flex items-center gap-2 p-3 rounded-xl"
-                style={{ background: "var(--accent-green-light)", color: "var(--accent-green)", fontSize: "13px", fontWeight: 500 }}
+                style={{
+                    background: "var(--neu-bg)",
+                    boxShadow: "var(--shadow-raised)",
+                    borderRadius: "1.25rem",
+                    padding: "1.5rem",
+                }}
             >
-                <CheckCircle size={14} /> {t.dashboard.uploadSuccess}
-            </div>
-            <button
-                className="neu-btn flex items-center gap-2 px-4 py-2"
-                style={{ fontSize: "13px", color: "var(--accent-blue)" }}
-                onClick={() => window.location.href = "/dashboard/students"}
-            >
-                {t.dashboard.viewScores} <ArrowRight size={13} />
-            </button>
-        </div>
-    )}
-</div>
+                <p className="section-label mb-1">{t.dashboard.uploadTitle}</p>
+                <p style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    marginBottom: "4px",
+                }}>
+                    {t.dashboard.uploadSubtitle}
+                </p>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+                    Upload attendance CSV to generate AI-powered dropout risk scores for all students.
+                </p>
 
-    </div >
-  )
+                <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById("csv-input")?.click()}
+                    style={{
+                        boxShadow: dragOver
+                            ? `inset 3px 3px 8px #C4CAD4, inset -3px -3px 8px #FFFFFF, inset 0 0 0 2px var(--accent-blue)`
+                            : "var(--shadow-inset)",
+                        borderRadius: "1rem",
+                        padding: "2.5rem",
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        background: dragOver ? "var(--accent-blue-light)" : "var(--neu-bg)",
+                    }}
+                >
+                    <input
+                        id="csv-input"
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+                    />
+                    <div
+                        style={{
+                            width: "48px",
+                            height: "48px",
+                            borderRadius: "0.75rem",
+                            background: "var(--neu-bg)",
+                            boxShadow: "var(--shadow-raised-sm)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 12px",
+                        }}
+                    >
+                        <Upload size={20} style={{ color: "var(--accent-blue)" }} />
+                    </div>
+                    <p style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-primary)" }}>
+                        {t.dashboard.dropCSV}
+                    </p>
+                    <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
+                        Supports: student_id, name, class, absences, marks columns
+                    </p>
+                </div>
+
+                {error && (
+                    <div
+                        className="flex items-center gap-2 mt-3 p-3 rounded-xl"
+                        style={{ background: "var(--accent-red-light)", color: "var(--accent-red)", fontSize: "13px" }}
+                    >
+                        <AlertCircle size={14} /> {error}
+                    </div>
+                )}
+
+                {file && !uploaded && (
+                    <div
+                        className="flex items-center justify-between mt-3 p-3 rounded-xl"
+                        style={{ boxShadow: "var(--shadow-inset-sm)" }}
+                    >
+                        <div className="flex items-center gap-2">
+                            <FileText size={14} style={{ color: "var(--text-muted)" }} />
+                            <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
+                                {file.name}
+                            </span>
+                            <span style={{
+                                fontSize: "11px",
+                                padding: "2px 8px",
+                                borderRadius: "999px",
+                                background: "var(--accent-blue-light)",
+                                color: "var(--accent-blue)",
+                            }}>
+                                {(file.size / 1024).toFixed(1)} KB
+                            </span>
+                        </div>
+                        <button
+                            className="neu-btn-primary px-4 py-2"
+                            style={{ fontSize: "12px" }}
+                            onClick={handleUpload}
+                            disabled={uploading}
+                        >
+                            {uploading ? "Uploading..." : "Upload"}
+                        </button>
+                    </div>
+                )}
+
+                {uploaded && (
+                    <div className="mt-3 space-y-3">
+                        <div
+                            className="flex items-center gap-2 p-3 rounded-xl"
+                            style={{ background: "var(--accent-green-light)", color: "var(--accent-green)", fontSize: "13px", fontWeight: 500 }}
+                        >
+                            <CheckCircle size={14} /> {t.dashboard.uploadSuccess}
+                        </div>
+                        <button
+                            className="neu-btn flex items-center gap-2 px-4 py-2"
+                            style={{ fontSize: "13px", color: "var(--accent-blue)" }}
+                            onClick={() => window.location.href = "/dashboard/students"}
+                        >
+                            {t.dashboard.viewScores} <ArrowRight size={13} />
+                        </button>
+                    </div>
+                )}
+            </div>
+
+        </div >
+    )
 }

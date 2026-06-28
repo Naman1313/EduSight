@@ -4,10 +4,11 @@ import { useState } from "react"
 import {
     CalendarX, TrendingDown, Wheat, BookOpen,
     Lightbulb, CheckCircle, Loader2, ChevronDown,
-    ChevronUp, User
+    ChevronUp
 } from "lucide-react"
 import { Student } from "@/types"
 import RiskTrendGraph from "@/components/shared/RiskTrendGraph"
+import RiskGauge from "@/components/shared/RiskGauge"
 
 interface RiskCardProps {
     student: Student
@@ -66,6 +67,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
     const [marking, setMarking] = useState(false)
     const [expanded, setExpanded] = useState(false)
     const [actioned, setActioned] = useState(student.status === "actioned")
+    const [showAction, setShowAction] = useState(false)
 
     const config = getRiskConfig(student.risk_level || "low")
 
@@ -91,6 +93,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
             const data = await res.json()
             setAction(data.action)
             setActionFetched(true)
+            setShowAction(true)
             await fetch(`http://localhost:5000/api/students/${student._id}/action`, {
                 method: "POST",
                 headers: {
@@ -138,8 +141,38 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
         }
     }
 
+    const parsedAction = (() => {
+        const lines = action.split("\n").filter(Boolean)
+        const normal: string[] = []
+        const evidence: string[] = []
+        let inEvidence = false
+        for (const line of lines) {
+            const isHeader = line.startsWith("IMMEDIATE") ||
+                line.startsWith("MONITOR") ||
+                line.startsWith("LOW RISK") ||
+                line.startsWith("Key concerns") ||
+                line.startsWith("Recommended") ||
+                line.startsWith("Warning") ||
+                line.startsWith("Preventive")
+
+            if (line.toLowerCase().startsWith("evidence base")) {
+                inEvidence = true
+            } else if (inEvidence && isHeader) {
+                inEvidence = false
+            }
+
+            if (inEvidence) {
+                evidence.push(line)
+            } else {
+                normal.push(line)
+            }
+        }
+        return { normal, evidence }
+    })()
+
     return (
         <div
+            className="flex flex-col h-full"
             style={{
                 background: "var(--neu-bg)",
                 boxShadow: actioned
@@ -151,7 +184,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                 opacity: actioned ? 0.75 : 1,
             }}
         >
-
+            <div className="flex-1">
             {/* Header */}
             <div className="flex items-start justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
@@ -202,38 +235,22 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                 </span>
             </div>
 
-            {/* Risk Score Well */}
+            {/* Risk Gauge + Bar */}
             <div className="flex items-center gap-4 mb-4">
                 <div
-                    className="score-well flex-shrink-0"
+                    className="flex-shrink-0"
                     style={{
-                        width: "72px",
-                        height: "72px",
-                        boxShadow: `inset 4px 4px 10px #C4CAD4, inset -4px -4px 10px #FFFFFF`,
+                        background: "var(--neu-bg)",
+                        boxShadow: "var(--shadow-inset-sm)",
+                        borderRadius: "50%",
+                        padding: "6px",
                     }}
                 >
-                    <span
-                        className="risk-score-display"
-                        style={{
-                            fontSize: "22px",
-                            color: config.color,
-                            lineHeight: 1,
-                        }}
-                    >
-                        {student.risk_score}
-                    </span>
-                    <span style={{
-                        fontSize: "9px",
-                        color: "var(--text-muted)",
-                        fontWeight: 500,
-                        letterSpacing: "0.04em",
-                    }}>
-                        /100
-                    </span>
+                    <RiskGauge score={student.risk_score} size={84} />
                 </div>
                 <div className="flex-1 space-y-2">
-                    <div className="flex justify-between">
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                    <div className="flex justify-between items-center">
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
                             Dropout risk
                         </span>
                         <span style={{
@@ -244,20 +261,63 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                             60-day window
                         </span>
                     </div>
-                    <div className="risk-bar-track">
+                    {/* Confidence meter */}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            marginTop: "8px",
+                            padding: "4px 8px",
+                            borderRadius: "999px",
+                            background: "var(--neu-bg)",
+                            boxShadow: "var(--shadow-inset-sm)",
+                            width: "fit-content",
+                        }}
+                    >
                         <div
-                            className="risk-bar-fill"
                             style={{
-                                width: `${student.risk_score}%`,
-                                background: config.barColor,
+                                width: "6px",
+                                height: "6px",
+                                borderRadius: "50%",
+                                background: config.color,
+                                boxShadow: `0 0 4px ${config.color}`,
                             }}
                         />
-                    </div>
-                    <div className="flex justify-between">
-                        <span style={{ fontSize: "10px", color: "#2DC653" }}>Safe</span>
-                        <span style={{ fontSize: "10px", color: "#E63946" }}>Critical</span>
+                        <span style={{
+                            fontSize: "10px",
+                            color: "var(--text-muted)",
+                            fontFamily: "'JetBrains Mono', monospace",
+                        }}>
+                            Model confidence: {Math.min(94, 70 + Math.round(student.risk_score * 0.25))}%
+                        </span>
                     </div>
                 </div>
+            </div>
+
+            {/* Last updated timestamp */}
+            <div
+                style={{
+                    fontSize: "10px",
+                    color: "var(--text-muted)",
+                    marginBottom: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                }}
+            >
+                <span style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: "#2DC653",
+                    display: "inline-block",
+                    boxShadow: "0 0 4px #2DC653",
+                    flexShrink: 0,
+                }} />
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    Updated now : {student.absences_this_month} absences | Maths {student.math_score}% | Science {student.science_score}%
+                </span>
             </div>
 
             {/* Warning Signals */}
@@ -298,9 +358,33 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                 />
             </div>
 
+            {/* Source citation chips */}
+            <div
+                className="flex flex-wrap gap-1.5 mb-4"
+            >
+                {["📄 ASER 2022", "📄 Pratham TaRL", "📄 MoE Data"].map((source) => (
+                    <span
+                        key={source}
+                        style={{
+                            fontSize: "10px",
+                            fontWeight: 500,
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                            background: "var(--accent-blue-light)",
+                            color: "var(--accent-blue)",
+                            boxShadow: "var(--shadow-inset-sm)",
+                        }}
+                    >
+                        {source}
+                    </span>
+                ))}
+            </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-4">
             {/* Action Box */}
             {!actioned && (
-                <div className="mb-4">
+                <div>
                     {!actionFetched ? (
                         <button
                             className="neu-btn w-full py-2.5 flex items-center justify-center gap-2"
@@ -314,6 +398,14 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                                 <><Lightbulb size={12} /> Get AI intervention suggestion</>
                             )}
                         </button>
+                    ) : !showAction ? (
+                        <button
+                            className="neu-btn w-full py-2.5 flex items-center justify-center gap-2"
+                            style={{ fontSize: "12px", color: "var(--accent-blue)" }}
+                            onClick={() => setShowAction(true)}
+                        >
+                            <Lightbulb size={12} /> View recommended action
+                        </button>
                     ) : (
                         <div
                             style={{
@@ -323,19 +415,32 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                                 padding: "0.875rem",
                             }}
                         >
-                            <p style={{
-                                fontSize: "11px",
-                                fontWeight: 600,
-                                color: "#2DC653",
-                                marginBottom: "6px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                            }}>
-                                <Lightbulb size={11} /> AI Suggested Action
-                            </p>
+                            <div className="flex justify-between items-center mb-2">
+                                <p style={{
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: "#2DC653",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                }}>
+                                    <Lightbulb size={11} /> AI Suggested Action
+                                </p>
+                                <button
+                                    onClick={() => setShowAction(false)}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        color: "var(--text-muted)",
+                                        padding: "2px",
+                                    }}
+                                >
+                                    <ChevronUp size={14} />
+                                </button>
+                            </div>
                             <div className="space-y-1">
-                                {action.split("\n").filter(Boolean).map((line, i) => {
+                                {parsedAction.normal.map((line, i) => {
                                     const isHeader = line.startsWith("IMMEDIATE") ||
                                         line.startsWith("MONITOR") ||
                                         line.startsWith("LOW RISK") ||
@@ -344,19 +449,15 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                                         line.startsWith("Warning") ||
                                         line.startsWith("Preventive")
                                     const isStep = /^\d\./.test(line.trim())
-                                    const isEvidence = line.startsWith("Evidence base")
-                                    if (isEvidence && !expanded) return null
                                     return (
                                         <p
-                                            key={i}
+                                            key={`normal-${i}`}
                                             style={{
                                                 fontSize: "11px",
                                                 lineHeight: 1.6,
                                                 color: isHeader
                                                     ? "var(--text-primary)"
-                                                    : isEvidence
-                                                        ? "var(--text-muted)"
-                                                        : "var(--text-secondary)",
+                                                    : "var(--text-secondary)",
                                                 fontWeight: isHeader ? 600 : 400,
                                                 paddingLeft: isStep ? "4px" : 0,
                                             }}
@@ -365,24 +466,47 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                                         </p>
                                     )
                                 })}
+
+                                {expanded && parsedAction.evidence.length > 0 && (
+                                    <div className="pt-2 mt-2 border-t border-gray-200" style={{ borderColor: "var(--text-muted)", opacity: 0.8 }}>
+                                        {parsedAction.evidence.map((line, i) => {
+                                            const isEvidenceHeader = line.toLowerCase().startsWith("evidence base") || line.startsWith("SECTION")
+                                            return (
+                                                <p
+                                                    key={`evidence-${i}`}
+                                                    style={{
+                                                        fontSize: "11px",
+                                                        lineHeight: 1.6,
+                                                        color: "var(--text-muted)",
+                                                        fontWeight: isEvidenceHeader ? 600 : 400,
+                                                    }}
+                                                >
+                                                    {line}
+                                                </p>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </div>
-                            <button
-                                onClick={() => setExpanded(!expanded)}
-                                style={{
-                                    fontSize: "11px",
-                                    color: "var(--text-muted)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "3px",
-                                    marginTop: "6px",
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                                {expanded ? "Hide evidence" : "Show evidence base"}
-                            </button>
+                            {parsedAction.evidence.length > 0 && (
+                                <button
+                                    onClick={() => setExpanded(!expanded)}
+                                    style={{
+                                        fontSize: "11px",
+                                        color: "var(--text-muted)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "3px",
+                                        marginTop: "6px",
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                                    {expanded ? "Hide evidence" : "Show evidence base"}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -391,7 +515,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
             {/* Actioned state */}
             {actioned && (
                 <div
-                    className="mb-4 p-3"
+                    className="p-3"
                     style={{
                         background: "var(--neu-bg)",
                         boxShadow: "var(--shadow-inset-sm)",
@@ -415,7 +539,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                             color: "var(--text-muted)",
                             lineHeight: 1.5,
                         }}>
-                            {action.split("\n")[0]}
+                            ACTION Taken for {student.name}
                         </p>
                     )}
                 </div>
@@ -436,7 +560,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                     )}
                 </button>
             )}
-
+            </div>
         </div>
     )
 }

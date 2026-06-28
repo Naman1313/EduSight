@@ -344,9 +344,77 @@ export default function InterventionsPage() {
                                                 <p style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                                                     Action taken
                                                 </p>
-                                                <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                                                    {intervention.action_taken.split("\n")[0]}
-                                                </p>
+                                                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                                                    {(() => {
+                                                        const text = intervention.action_taken;
+                                                        
+                                                        // Fallback for simple manual text
+                                                        if (!text.includes("IMMEDIATE") && text.length < 50) {
+                                                            return <p>{text}</p>;
+                                                        }
+
+                                                        const verbMap: Record<string, string> = {
+                                                            'conduct': 'Conducted', 'create': 'Created', 'enroll': 'Enrolled',
+                                                            'check': 'Checked', 'schedule': 'Scheduled', 'arrange': 'Arranged',
+                                                            'provide': 'Provided', 'assign': 'Assigned', 'monitor': 'Monitored',
+                                                            'contact': 'Contacted', 'implement': 'Implemented', 'discuss': 'Discussed',
+                                                            'ensure': 'Ensured', 'review': 'Reviewed', 'organize': 'Organized',
+                                                            'initiate': 'Initiated', 'recommend': 'Recommended', 'start': 'Started',
+                                                            'call': 'Called', 'meet': 'Met', 'assess': 'Assessed', 'coordinate': 'Coordinated',
+                                                            'talk': 'Talked', 'follow': 'Followed', 'refer': 'Referred', 'evaluate': 'Evaluated',
+                                                            'give': 'Gave', 'send': 'Sent', 'set': 'Set'
+                                                        };
+
+                                                        // If text is a single paragraph, split by periods
+                                                        let lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                                                        if (lines.length <= 2 && lines[0].includes('. ')) {
+                                                            lines = lines[0].split('. ').map(l => l.trim()).filter(Boolean);
+                                                        }
+
+                                                        const summaryLines: string[] = [];
+                                                        let inEvidence = false;
+                                                        for (const line of lines) {
+                                                            const isHeader = line.startsWith("IMMEDIATE") || 
+                                                                line.startsWith("MONITOR") || 
+                                                                line.startsWith("LOW RISK") || 
+                                                                line.startsWith("Key concerns") || 
+                                                                line.startsWith("Recommended") ||
+                                                                line.startsWith("Warning") ||
+                                                                line.startsWith("Preventive");
+                                                                
+                                                            if (line.toLowerCase().startsWith("evidence base")) {
+                                                                inEvidence = true;
+                                                            } else if (inEvidence && isHeader) {
+                                                                inEvidence = false;
+                                                            }
+                                                            
+                                                            if (!inEvidence && !isHeader) {
+                                                                let cleanLine = line.replace(/^\d+\.\s*/, '');
+                                                                const match = cleanLine.match(/^([a-zA-Z]+)\b/);
+                                                                if (match) {
+                                                                    const firstWord = match[1].toLowerCase();
+                                                                    if (verbMap[firstWord]) {
+                                                                        cleanLine = cleanLine.replace(/^[a-zA-Z]+\b/, verbMap[firstWord]);
+                                                                    }
+                                                                }
+                                                                if (!cleanLine.endsWith('.')) cleanLine += '.';
+                                                                summaryLines.push(cleanLine);
+                                                            }
+                                                        }
+                                                        
+                                                        if (summaryLines.length === 0) {
+                                                            return <p>ACTION Taken for {intervention.student_name}</p>;
+                                                        }
+
+                                                        return (
+                                                            <ul style={{ listStyleType: "disc", paddingLeft: "1.25rem", margin: "4px 0" }}>
+                                                                {summaryLines.map((line, idx) => (
+                                                                    <li key={idx} style={{ marginBottom: "4px" }}>{line}</li>
+                                                                ))}
+                                                            </ul>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </div>
                                         )}
 

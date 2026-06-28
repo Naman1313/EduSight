@@ -5,6 +5,7 @@ import { Search, AlertTriangle, ArrowLeft, CheckCircle, Loader2 } from "lucide-r
 import { Student } from "@/types"
 import RiskCard from "@/components/shared/RiskCard"
 import { useTranslations } from "@/lib/useTranslations"
+import { SkeletonCard, SkeletonStatCard } from "@/components/shared/SkeletonCard"
 
 export default function StudentsPage() {
     const [students, setStudents] = useState<Student[]>([])
@@ -290,17 +291,14 @@ export default function StudentsPage() {
 
             {/* States */}
             {loading && (
-                <div
-                    className="text-center py-20"
-                    style={{
-                        boxShadow: "var(--shadow-inset)",
-                        borderRadius: "1.25rem",
-                        color: "var(--text-muted)",
-                        fontSize: "14px",
-                    }}
-                >
-                    {t.students.loading}
-                </div>
+                <>
+                    <div className="grid grid-cols-3 gap-4">
+                        {[1, 2, 3].map((i) => <SkeletonStatCard key={i} />)}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)}
+                    </div>
+                </>
             )}
 
             {error && (

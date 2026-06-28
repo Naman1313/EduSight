@@ -256,3 +256,39 @@ body {
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* ===================== SKELETON LOADING ===================== */
+
+@keyframes skeleton-shimmer {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton-pulse {
+  background: linear-gradient(90deg,
+      #D8DDE5 0%,
+      #E8EDF2 40%,
+      #D8DDE5 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  box-shadow: inset 2px 2px 5px #C4CAD4, inset -2px -2px 5px #FFFFFF;
+}
+
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
