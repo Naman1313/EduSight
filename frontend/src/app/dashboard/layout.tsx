@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { useRouter, usePathname } from "next/navigation"
+import { Menu, X, GraduationCap } from "lucide-react"
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher"
 
 export default function DashboardLayout({
@@ -11,103 +11,167 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const router = useRouter()
+    const pathname = usePathname()
     const [menuOpen, setMenuOpen] = useState(false)
+    const [scrolled, setScrolled] = useState(false)
 
     useEffect(() => {
         const token = localStorage.getItem("token")
-        if (!token) {
-            router.push("/auth")
-        }
+        if (!token) router.push("/auth")
+        const handleScroll = () => setScrolled(window.scrollY > 10)
+        window.addEventListener("scroll", handleScroll)
+        return () => window.removeEventListener("scroll", handleScroll)
     }, [router])
 
     const navLinks = [
         { href: "/dashboard", label: "Home" },
         { href: "/dashboard/students", label: "Students" },
         { href: "/dashboard/schools", label: "Schools" },
-        { href: "/dashboard/ocr", label: "Scan marks" },
+        { href: "/dashboard/ocr", label: "Scan Marks" },
         { href: "/dashboard/interventions", label: "Interventions" },
     ]
 
     return (
-        <div className="min-h-screen bg-muted/40">
-            <header className="bg-background border-b px-4 md:px-6 py-4">
-                <div className="flex items-center justify-between">
+        <div className="min-h-screen" style={{ background: "var(--neu-bg)" }}>
+
+            <header
+                className="sticky top-0 z-50 px-4 md:px-8 py-4 transition-all duration-200"
+                style={{
+                    background: "var(--neu-bg)",
+                    boxShadow: scrolled
+                        ? "0 4px 20px rgba(196, 202, 212, 0.8), 0 -2px 8px rgba(255,255,255,0.9)"
+                        : "none",
+                }}
+            >
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+
+                    {/* Logo */}
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">ES</span>
+                        <div
+                            className="w-10 h-10 flex items-center justify-center"
+                            style={{
+                                background: "var(--neu-bg)",
+                                boxShadow: "var(--shadow-raised-sm)",
+                                borderRadius: "0.75rem",
+                            }}
+                        >
+                            <GraduationCap size={20} style={{ color: "var(--accent-blue)" }} />
                         </div>
                         <div>
-                            <h1 className="font-semibold text-sm">EduSight</h1>
-                            <p className="text-xs text-muted-foreground hidden sm:block">
-                                Block Education Dashboard
+                            <h1 style={{
+                                fontSize: "16px",
+                                fontWeight: 700,
+                                color: "var(--text-primary)",
+                                letterSpacing: "-0.02em",
+                                lineHeight: 1,
+                            }}>
+                                EduSight
+                            </h1>
+                            <p style={{
+                                fontSize: "10px",
+                                color: "var(--text-muted)",
+                                fontWeight: 500,
+                                letterSpacing: "0.04em",
+                            }}>
+                                DROPOUT PREVENTION
                             </p>
                         </div>
                     </div>
 
                     {/* Desktop nav */}
-                    <nav className="hidden md:flex items-center gap-4">
+                    <nav className="hidden md:flex items-center gap-1">
                         {navLinks.map((link) => (
-                            <a
-                                key={link.href}
-                                href={link.href}
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                        <LanguageSwitcher />
-                        <button
-                            onClick={() => {
-                                localStorage.removeItem("token")
-                                window.location.href = "/auth"
-                            }}
-                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        <a
+                            key={link.href}
+                            href={link.href}
+                            className="nav-link"
+                            style={
+                                pathname === link.href
+                                    ? {
+                                        color: "var(--accent-blue)",
+                                        background: "var(--neu-bg)",
+                                        boxShadow: "var(--shadow-inset-sm)",
+                                    }
+                                    : {}
+                            }
                         >
-                            Sign out
-                        </button>
-                    </nav>
+                            {link.label}
+                        </a>
+            ))}
+                </nav>
 
-                    {/* Mobile hamburger */}
+                <div className="hidden md:flex items-center gap-3">
+                    <LanguageSwitcher />
                     <button
-                        className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => setMenuOpen(!menuOpen)}
+                        className="neu-btn text-xs px-4 py-2"
+                        style={{ color: "var(--text-muted)", fontSize: "13px" }}
+                        onClick={() => {
+                            localStorage.removeItem("token")
+                            window.location.href = "/auth"
+                        }}
                     >
-                        {menuOpen ? <X size={18} /> : <Menu size={18} />}
+                        Sign out
                     </button>
                 </div>
 
-                {/* Mobile menu */}
-                {menuOpen && (
-                    <nav className="md:hidden mt-3 pt-3 border-t flex flex-col gap-1">
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.href}
-                                href={link.href}
-                                className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-muted"
-                                onClick={() => setMenuOpen(false)}
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                        <div className="py-2 px-2">
-                            <LanguageSwitcher />
-                        </div>
-                        <button
-                            onClick={() => {
-                                localStorage.removeItem("token")
-                                window.location.href = "/auth"
-                            }}
-                            className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-muted text-left"
-                        >
-                            Sign out
-                        </button>
-                    </nav>
-                )}
-            </header>
-
-            <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
-                {children}
-            </main>
+                {/* Mobile hamburger */}
+                <button
+                    className="md:hidden neu-btn p-2"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                >
+                    {menuOpen ? <X size={18} /> : <Menu size={18} />}
+                </button>
         </div>
-    )
+
+        {/* Mobile menu */ }
+    {
+        menuOpen && (
+            <div
+                className="md:hidden mt-4 p-4 mx-4 rounded-2xl"
+                style={{ boxShadow: "var(--shadow-raised)" }}
+            >
+                <nav className="flex flex-col gap-1">
+                    {navLinks.map((link) => (
+                        <a
+                            key={link.href}
+                            href={link.href}
+                            className="nav-link"
+                            onClick={() => setMenuOpen(false)}
+                            style={
+                                pathname === link.href
+                                    ? {
+                                        color: "var(--accent-blue)",
+                                        background: "var(--neu-bg)",
+                                        boxShadow: "var(--shadow-inset-sm)",
+                                    }
+                                    : {}
+                            }
+                        >
+                            {link.label}
+                        </a>
+              ))}
+                <div className="pt-2 mt-2 border-t border-gray-200 flex items-center justify-between">
+                    <LanguageSwitcher />
+                    <button
+                        className="text-xs neu-btn px-3 py-2"
+                        style={{ color: "var(--text-muted)" }}
+                        onClick={() => {
+                            localStorage.removeItem("token")
+                            window.location.href = "/auth"
+                        }}
+                    >
+                        Sign out
+                    </button>
+                </div>
+            </nav>
+          </div >
+        )
+    }
+      </header >
+
+        <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+            {children}
+        </main>
+    </div >
+  )
 }

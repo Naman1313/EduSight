@@ -1,52 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --primary: 221 83% 53%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
-  --destructive: 0 84% 60%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 221 83% 53%;
-}
+  --radius: 1rem;
 
-.dark {
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 11%;
-  --card-foreground: 210 40% 98%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 222 47% 11%;
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 217 33% 17%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62% 30%;
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --ring: 224 76% 48%;
+  /* Neumorphism base */
+  --neu-bg: #E8EDF2;
+  --neu-light: #FFFFFF;
+  --neu-dark: #C4CAD4;
+
+  /* Shadows */
+  --shadow-raised: 6px 6px 14px #C4CAD4, -6px -6px 14px #FFFFFF;
+  --shadow-raised-sm: 4px 4px 8px #C4CAD4, -4px -4px 8px #FFFFFF;
+  --shadow-inset: inset 4px 4px 10px #C4CAD4, inset -4px -4px 10px #FFFFFF;
+  --shadow-inset-sm: inset 2px 2px 6px #C4CAD4, inset -2px -2px 6px #FFFFFF;
+  --shadow-pressed: inset 3px 3px 8px #C4CAD4, inset -1px -1px 4px #FFFFFF;
+
+  /* Accent colours */
+  --accent-blue: #4361EE;
+  --accent-blue-light: #EEF1FD;
+  --accent-red: #E63946;
+  --accent-red-light: #FDECEA;
+  --accent-amber: #F4A261;
+  --accent-amber-light: #FEF4EC;
+  --accent-green: #2DC653;
+  --accent-green-light: #E8F9ED;
+
+  /* Text */
+  --text-primary: #2B3A52;
+  --text-secondary: #4A5568;
+  --text-muted: #6B7A99;
+  --text-accent: #4361EE;
+
+  /* shadcn compat */
+  --background: 220 20% 90%;
+  --foreground: 220 30% 20%;
+  --card: 220 20% 90%;
+  --card-foreground: 220 30% 20%;
+  --primary: 231 85% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 20% 85%;
+  --secondary-foreground: 220 30% 20%;
+  --muted: 220 15% 86%;
+  --muted-foreground: 220 15% 45%;
+  --accent: 220 20% 85%;
+  --accent-foreground: 220 30% 20%;
+  --destructive: 355 72% 56%;
+  --border: 220 15% 82%;
+  --input: 220 15% 86%;
+  --ring: 231 85% 60%;
 }
 
 * {
-  border-color: hsl(var(--border));
+  box-sizing: border-box;
+  border-color: transparent;
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--neu-bg);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===================== NEUMORPHISM UTILITY CLASSES ===================== */
+
+.neu-raised {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised);
+  border-radius: var(--radius);
+}
+
+.neu-raised-sm {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised-sm);
+  border-radius: 0.75rem;
+}
+
+.neu-inset {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset);
+  border-radius: var(--radius);
+}
+
+.neu-inset-sm {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset-sm);
+  border-radius: 0.75rem;
+}
+
+.neu-pressed {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-pressed);
+  border-radius: 0.5rem;
+}
+
+.neu-btn {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised-sm);
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+}
+
+.neu-btn:hover {
+  box-shadow: 5px 5px 12px #C4CAD4, -5px -5px 12px #FFFFFF;
+}
+
+.neu-btn:active {
+  box-shadow: var(--shadow-pressed);
+  transform: scale(0.98);
+}
+
+.neu-btn-primary {
+  background: var(--accent-blue);
+  box-shadow: 4px 4px 10px #3451d1, -2px -2px 8px #5571ff;
+  color: white;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.neu-btn-primary:hover {
+  box-shadow: 5px 5px 12px #2d45bb, -2px -2px 8px #6680ff;
+}
+
+.neu-btn-primary:active {
+  box-shadow: inset 3px 3px 8px #2d45bb, inset -1px -1px 4px #6680ff;
+  transform: scale(0.98);
+}
+
+.neu-input {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset-sm);
+  border-radius: 0.75rem;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  transition: box-shadow 0.15s ease;
+}
+
+.neu-input:focus {
+  box-shadow: inset 3px 3px 8px #C4CAD4, inset -3px -3px 8px #FFFFFF, 0 0 0 2px var(--accent-blue);
+}
+
+.risk-score-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.score-well {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.initials-badge {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised-sm);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.signal-tag {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset-sm);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.stat-card {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 8px 8px 18px #C4CAD4, -8px -8px 18px #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.stat-card:active {
+  box-shadow: var(--shadow-pressed);
+  transform: translateY(0);
+}
+
+.risk-bar-track {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset-sm);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }

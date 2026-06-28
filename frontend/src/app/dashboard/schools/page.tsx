@@ -1,9 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, School, Users, AlertTriangle, CheckCircle, TrendingDown } from "lucide-react"
+import { ArrowLeft, School, Users, AlertTriangle, CheckCircle } from "lucide-react"
 
 interface SchoolStat {
     school_id: string
@@ -26,23 +24,16 @@ export default function SchoolsPage() {
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        fetchSchools()
-    }, [])
+    useEffect(() => { fetchSchools() }, [])
 
     const fetchSchools = async () => {
         setLoading(true)
         try {
             const res = await fetch("http://localhost:5000/api/schools/stats", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             })
             const data = await res.json()
-            if (res.ok) {
-                setSchools(data.schools)
-                setStats(data.stats)
-            }
+            if (res.ok) { setSchools(data.schools); setStats(data.stats) }
         } catch (err) {
             console.error(err)
         } finally {
@@ -51,187 +42,209 @@ export default function SchoolsPage() {
     }
 
     const getRiskLevel = (school: SchoolStat) => {
-        const highPercent = (school.high / school.total) * 100
-        if (highPercent >= 30) return "critical"
-        if (highPercent >= 15) return "warning"
-        return "stable"
+        const pct = (school.high / school.total) * 100
+        if (pct >= 30) return { label: "Critical", color: "var(--accent-red)", bg: "var(--accent-red-light)" }
+        if (pct >= 15) return { label: "Needs attention", color: "var(--accent-amber)", bg: "var(--accent-amber-light)" }
+        return { label: "Stable", color: "var(--accent-green)", bg: "var(--accent-green-light)" }
     }
 
-    const getRiskBadge = (level: string) => {
-        if (level === "critical") return "bg-red-100 text-red-700 border-red-200"
-        if (level === "warning") return "bg-yellow-100 text-yellow-700 border-yellow-200"
-        return "bg-green-100 text-green-700 border-green-200"
-    }
-
-    const getRiskLabel = (level: string) => {
-        if (level === "critical") return "Critical"
-        if (level === "warning") return "Needs attention"
-        return "Stable"
-    }
+    const statCards = [
+        { icon: School, label: "Total schools", value: stats?.total_schools ?? "—", color: "var(--accent-blue)" },
+        { icon: Users, label: "Total students", value: stats?.total_students ?? "—", color: "var(--accent-blue)" },
+        { icon: AlertTriangle, label: "High risk", value: stats?.high_risk ?? "—", color: "var(--accent-red)" },
+        { icon: CheckCircle, label: "Actions pending", value: stats?.pending_actions ?? "—", color: "var(--accent-amber)" },
+    ]
 
     return (
         <div className="space-y-6">
 
             <div className="flex items-center gap-3">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.location.href = "/dashboard"}
-                    className="gap-2"
-                >
-                    <ArrowLeft size={14} />
-                    Back
-                </Button>
+                <button className="neu-btn p-2" onClick={() => window.location.href = "/dashboard"}>
+                    <ArrowLeft size={16} style={{ color: "var(--text-muted)" }} />
+                </button>
                 <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">School Overview</h2>
-                    <p className="text-muted-foreground text-sm mt-0.5">
+                    <p className="section-label">Block overview</p>
+                    <h2 className="page-title">School Overview</h2>
+                    <p style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>
                         Block-level dropout risk across all monitored schools
                     </p>
                 </div>
             </div>
 
+            {/* Stat cards */}
             {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-2 mb-1">
-                                <School size={14} className="text-muted-foreground" />
-                                <p className="text-xs text-muted-foreground">Total schools</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {statCards.map((card) => (
+                        <div key={card.label} className="stat-card">
+                            <div
+                                style={{
+                                    width: "32px",
+                                    height: "32px",
+                                    borderRadius: "0.625rem",
+                                    background: "var(--neu-bg)",
+                                    boxShadow: "var(--shadow-raised-sm)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginBottom: "12px",
+                                }}
+                            >
+                                <card.icon size={14} style={{ color: card.color }} />
                             </div>
-                            <p className="text-3xl font-semibold">{stats.total_schools}</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-2 mb-1">
-                                <Users size={14} className="text-muted-foreground" />
-                                <p className="text-xs text-muted-foreground">Total students</p>
-                            </div>
-                            <p className="text-3xl font-semibold">{stats.total_students}</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-2 mb-1">
-                                <AlertTriangle size={14} className="text-red-500" />
-                                <p className="text-xs text-muted-foreground">High risk</p>
-                            </div>
-                            <p className="text-3xl font-semibold text-red-600">{stats.high_risk}</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-2 mb-1">
-                                <CheckCircle size={14} className="text-green-500" />
-                                <p className="text-xs text-muted-foreground">Actions pending</p>
-                            </div>
-                            <p className="text-3xl font-semibold text-yellow-600">{stats.pending_actions}</p>
-                        </CardContent>
-                    </Card>
+                            <p style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
+                                {card.label}
+                            </p>
+                            <p
+                                className="risk-score-display"
+                                style={{ fontSize: "2rem", color: card.color, lineHeight: 1.1, marginTop: "2px" }}
+                            >
+                                {card.value}
+                            </p>
+                        </div>
+                    ))}
                 </div>
             )}
 
             {loading && (
-                <div className="text-center py-20 text-muted-foreground">
+                <div
+                    className="text-center py-20"
+                    style={{ boxShadow: "var(--shadow-inset)", borderRadius: "1.25rem", color: "var(--text-muted)" }}
+                >
                     Loading school data...
                 </div>
             )}
 
             {!loading && schools.length === 0 && (
-                <div className="text-center py-20 text-muted-foreground">
+                <div
+                    className="text-center py-20"
+                    style={{ boxShadow: "var(--shadow-inset)", borderRadius: "1.25rem", color: "var(--text-muted)" }}
+                >
                     <School size={32} className="mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No school data found.</p>
-                    <p className="text-xs mt-1">Upload a CSV from the dashboard to get started.</p>
+                    <p style={{ fontSize: "14px" }}>No school data found. Upload a CSV first.</p>
                 </div>
             )}
 
             {!loading && schools.length > 0 && (
                 <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Schools in your block
-                    </h3>
+                    <p className="section-label">Schools in your block</p>
                     {schools.map((school) => {
-                        const level = getRiskLevel(school)
-                        const highPercent = Math.round((school.high / school.total) * 100)
-                        const mediumPercent = Math.round((school.medium / school.total) * 100)
-                        const lowPercent = Math.round((school.low / school.total) * 100)
+                        const risk = getRiskLevel(school)
+                        const highPct = Math.round((school.high / school.total) * 100)
+                        const medPct = Math.round((school.medium / school.total) * 100)
+                        const lowPct = Math.round((school.low / school.total) * 100)
 
                         return (
-                            <Card
+                            <div
                                 key={school.school_id}
-                                className="cursor-pointer hover:border-primary/50 transition-colors"
+                                style={{
+                                    background: "var(--neu-bg)",
+                                    boxShadow: "var(--shadow-raised)",
+                                    borderRadius: "1.25rem",
+                                    padding: "1.25rem",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                }}
                                 onClick={() => window.location.href = `/dashboard/students?school=${school.school_id}`}
+                                onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"
+                                        ; (e.currentTarget as HTMLElement).style.boxShadow = "8px 8px 18px #C4CAD4, -8px -8px 18px #FFFFFF"
+                                }}
+                                onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLElement).style.transform = "translateY(0)"
+                                        ; (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-raised)"
+                                }}
                             >
-                                <CardContent className="pt-5 pb-5">
-                                    <div className="flex items-start justify-between gap-4 mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                <School size={18} className="text-primary" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm">{school.school_name}</p>
-                                                <p className="text-xs text-muted-foreground mt-0.5">
-                                                    {school.total} students enrolled
-                                                </p>
-                                            </div>
+                                <div className="flex items-start justify-between gap-4 mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            style={{
+                                                width: "44px",
+                                                height: "44px",
+                                                borderRadius: "0.875rem",
+                                                background: "var(--neu-bg)",
+                                                boxShadow: "var(--shadow-inset-sm)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            <School size={20} style={{ color: "var(--accent-blue)" }} />
                                         </div>
-                                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${getRiskBadge(level)}`}>
-                                            {getRiskLabel(level)}
-                                        </span>
+                                        <div>
+                                            <p style={{ fontWeight: 600, fontSize: "15px", color: "var(--text-primary)" }}>
+                                                {school.school_name}
+                                            </p>
+                                            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>
+                                                {school.total} students enrolled
+                                            </p>
+                                        </div>
                                     </div>
+                                    <span style={{
+                                        fontSize: "11px",
+                                        fontWeight: 600,
+                                        padding: "4px 12px",
+                                        borderRadius: "999px",
+                                        background: risk.bg,
+                                        color: risk.color,
+                                        flexShrink: 0,
+                                    }}>
+                                        {risk.label}
+                                    </span>
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs text-muted-foreground w-16">High risk</span>
-                                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                <div className="space-y-2">
+                                    {[
+                                        { label: "High risk", count: school.high, pct: highPct, color: "var(--accent-red)" },
+                                        { label: "Medium", count: school.medium, pct: medPct, color: "var(--accent-amber)" },
+                                        { label: "Low risk", count: school.low, pct: lowPct, color: "var(--accent-green)" },
+                                    ].map((bar) => (
+                                        <div key={bar.label} className="flex items-center gap-3">
+                                            <span style={{ fontSize: "11px", color: "var(--text-muted)", width: "60px", flexShrink: 0 }}>
+                                                {bar.label}
+                                            </span>
+                                            <div className="risk-bar-track flex-1">
                                                 <div
-                                                    className="h-full bg-red-500 rounded-full transition-all duration-700"
-                                                    style={{ width: `${highPercent}%` }}
+                                                    className="risk-bar-fill"
+                                                    style={{ width: `${bar.pct}%`, background: bar.color }}
                                                 />
                                             </div>
-                                            <span className="text-xs font-medium text-red-600 w-12 text-right">
-                                                {school.high} ({highPercent}%)
+                                            <span style={{
+                                                fontSize: "11px",
+                                                fontWeight: 600,
+                                                color: bar.color,
+                                                width: "60px",
+                                                textAlign: "right",
+                                                flexShrink: 0,
+                                                fontFamily: "'JetBrains Mono', monospace",
+                                            }}>
+                                                {bar.count} ({bar.pct}%)
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs text-muted-foreground w-16">Medium</span>
-                                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-yellow-500 rounded-full transition-all duration-700"
-                                                    style={{ width: `${mediumPercent}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-xs font-medium text-yellow-600 w-12 text-right">
-                                                {school.medium} ({mediumPercent}%)
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs text-muted-foreground w-16">Low risk</span>
-                                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-green-500 rounded-full transition-all duration-700"
-                                                    style={{ width: `${lowPercent}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-xs font-medium text-green-600 w-12 text-right">
-                                                {school.low} ({lowPercent}%)
-                                            </span>
-                                        </div>
-                                    </div>
+                                    ))}
+                                </div>
 
-                                    <div className="mt-4 pt-3 border-t flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground">
-                                            Click to view all students →
+                                <div
+                                    className="flex items-center justify-between mt-4 pt-3"
+                                    style={{ borderTop: "1px solid rgba(196,202,212,0.5)" }}
+                                >
+                                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                                        Click to view all students →
+                                    </span>
+                                    {school.high > 0 && (
+                                        <span style={{
+                                            fontSize: "11px",
+                                            color: "var(--accent-red)",
+                                            fontWeight: 600,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                        }}>
+                                            <AlertTriangle size={11} /> {school.high} need immediate action
                                         </span>
-                                        {school.high > 0 && (
-                                            <span className="text-xs text-red-600 font-medium flex items-center gap-1">
-                                                <AlertTriangle size={11} />
-                                                {school.high} need immediate action
-                                            </span>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                    )}
+                                </div>
+                            </div>
                         )
                     })}
                 </div>

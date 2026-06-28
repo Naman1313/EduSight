@@ -1,319 +1,386 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Search, AlertTriangle, ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
-import { Student } from "@/types"
-import RiskCard from "@/components/shared/RiskCard"
+import { useState, useEffect } from "react"
+import {
+    Upload, FileText, CheckCircle, AlertCircle,
+    ArrowRight, School, Users, AlertTriangle, TrendingUp
+} from "lucide-react"
 import { useTranslations } from "@/lib/useTranslations"
 
-export default function StudentsPage() {
-    const [students, setStudents] = useState<Student[]>([])
-    const [filtered, setFiltered] = useState<Student[]>([])
-    const [loading, setLoading] = useState(true)
-    const [search, setSearch] = useState("")
-    const [filter, setFilter] = useState<"all" | "high" | "medium" | "low">("all")
-    const [schoolFilter, setSchoolFilter] = useState<string>("")
+interface Stats {
+    total_schools: number
+    total_students: number
+    high_risk: number
+    pending_actions: number
+}
+
+interface SchoolStat {
+    school_id: string
+    school_name: string
+    total: number
+    high: number
+    medium: number
+    low: number
+}
+
+export default function DashboardPage() {
+    const [file, setFile] = useState<File | null>(null)
+    const [uploading, setUploading] = useState(false)
+    const [uploaded, setUploaded] = useState(false)
+    const [dragOver, setDragOver] = useState(false)
     const [error, setError] = useState("")
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-    const [bulkActioning, setBulkActioning] = useState(false)
-    const [bulkDone, setBulkDone] = useState(false)
+    const [stats, setStats] = useState<Stats | null>(null)
+    const [schools, setSchools] = useState<SchoolStat[]>([])
     const { t } = useTranslations()
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search)
-        const schoolParam = params.get("school")
-        const filterParam = params.get("filter")
-        if (schoolParam) setSchoolFilter(schoolParam)
-        if (filterParam && ["high", "medium", "low"].includes(filterParam)) {
-            setFilter(filterParam as "high" | "medium" | "low")
-        }
-        fetchStudents()
-    }, [])
+    useEffect(() => { fetchStats() }, [])
 
-    useEffect(() => {
-        let result = students
-        if (schoolFilter) {
-            result = result.filter((s) => s.school_id === schoolFilter)
-        }
-        if (filter !== "all") {
-            result = result.filter((s) => s.risk_level === filter)
-        }
-        if (search.trim()) {
-            result = result.filter(
-                (s) =>
-                    s.name.toLowerCase().includes(search.toLowerCase()) ||
-                    s.school_name?.toLowerCase().includes(search.toLowerCase()) ||
-                    s.class_grade?.toLowerCase().includes(search.toLowerCase())
-            )
-        }
-        setFiltered(result)
-    }, [students, filter, search, schoolFilter])
-
-    const fetchStudents = async () => {
-        setLoading(true)
+    const fetchStats = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/students", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
+            const res = await fetch("http://localhost:5000/api/schools/stats", {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            })
+            const data = await res.json()
+            if (res.ok) { setStats(data.stats); setSchools(data.schools) }
+        } catch { console.error("Could not fetch stats") }
+    }
+
+    const handleFile = (f: File) => {
+        if (!f.name.endsWith(".csv")) { setError("Only CSV files are supported."); return }
+        setError(""); setFile(f)
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault(); setDragOver(false)
+        const f = e.dataTransfer.files[0]
+        if (f) handleFile(f)
+    }
+
+    const handleUpload = async () => {
+        if (!file) return
+        setUploading(true); setError("")
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+            const res = await fetch("http://localhost:5000/api/students/upload", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                body: formData,
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.message)
-            setStudents(data)
-            setFiltered(data)
+            setUploaded(true); fetchStats()
         } catch (err: any) {
-            setError(err.message || "Failed to fetch students")
-        } finally {
-            setLoading(false)
-        }
+            setError(err.message || "Upload failed")
+        } finally { setUploading(false) }
     }
 
-    const highRisk = students.filter((s) => s.risk_level === "high").length
-    const mediumRisk = students.filter((s) => s.risk_level === "medium").length
-    const lowRisk = students.filter((s) => s.risk_level === "low").length
-
-    const toggleSelect = (id: string) => {
-        setSelectedIds((prev) => {
-            const next = new Set(prev)
-            if (next.has(id)) next.delete(id)
-            else next.add(id)
-            return next
-        })
-    }
-
-    const selectAllHighRisk = () => {
-        const highRiskIds = filtered
-            .filter((s) => s.risk_level === "high" && s.status !== "actioned")
-            .map((s) => s._id)
-        setSelectedIds(new Set(highRiskIds))
-    }
-
-    const clearSelection = () => {
-        setSelectedIds(new Set())
-        setBulkDone(false)
-    }
-
-    const bulkAction = async () => {
-        if (selectedIds.size === 0) return
-        setBulkActioning(true)
-        try {
-            const promises = Array.from(selectedIds).map(async (id) => {
-                const student = students.find((s) => s._id === id)
-                await fetch(`http://localhost:5000/api/students/${id}/action`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                    body: JSON.stringify({ status: "actioned" }),
-                })
-                await fetch("http://localhost:5000/api/interventions", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                    body: JSON.stringify({
-                        student_id: id,
-                        action_taken: student?.intervention_action || "Bulk action taken by BEO",
-                        status: "completed",
-                    }),
-                })
-            })
-            await Promise.all(promises)
-            setBulkDone(true)
-            setSelectedIds(new Set())
-            fetchStudents()
-        } catch (err) {
-            console.error(err)
-        } finally {
-            setBulkActioning(false)
-        }
-    }
+    const statCards = [
+        {
+            icon: School,
+            label: t.dashboard.schoolsMonitored,
+            value: stats ? stats.total_schools : "—",
+            sub: stats ? `${stats.total_students} ${t.dashboard.totalStudents}` : t.dashboard.uploadToSee,
+            color: "var(--accent-blue)",
+            href: "/dashboard/schools",
+        },
+        {
+            icon: AlertTriangle,
+            label: t.dashboard.studentsAtRisk,
+            value: stats ? stats.high_risk : "—",
+            sub: stats ? t.dashboard.clickToView : t.dashboard.uploadToSee,
+            color: "var(--accent-red)",
+            href: "/dashboard/students?filter=high",
+        },
+        {
+            icon: Users,
+            label: t.dashboard.actionsPending,
+            value: stats ? stats.pending_actions : "—",
+            sub: stats ? t.dashboard.highNotActioned : t.dashboard.uploadToSee,
+            color: "var(--accent-amber)",
+            href: "/dashboard/students",
+        },
+    ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
 
-            <div className="flex items-center gap-3">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.location.href = "/dashboard"}
-                    className="gap-2"
-                >
-                    <ArrowLeft size={14} />
-                    Back
-                </Button>
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">{t.students.title}</h2>
-                    <p className="text-muted-foreground text-sm mt-0.5">
-                        {schoolFilter
-                            ? `${filtered.length} ${t.students.inSchool} ${filtered[0]?.school_name || ""}`
-                            : `${students.length} ${t.students.acrossSchools}`
-                        }
-                    </p>
-                </div>
+            {/* Page header */}
+            <div>
+                <p className="section-label mb-1">Block Education Dashboard</p>
+                <h2 className="page-title">{t.dashboard.welcome}</h2>
+                <p style={{ fontSize: "14px", color: "var(--text-muted)", marginTop: "4px" }}>
+                    {t.dashboard.subtitle}
+                </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div
-                    className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:bg-red-100 transition-colors"
-                    onClick={() => setFilter("high")}
-                >
-                    <p className="text-xs text-red-600 font-medium uppercase tracking-wide">{t.students.high} Risk</p>
-                    <p className="text-3xl font-semibold text-red-700 mt-1">{highRisk}</p>
-                    <p className="text-xs text-red-500 mt-0.5">Needs immediate action</p>
-                </div>
-                <div
-                    className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:bg-yellow-100 transition-colors"
-                    onClick={() => setFilter("medium")}
-                >
-                    <p className="text-xs text-yellow-600 font-medium uppercase tracking-wide">{t.students.medium} Risk</p>
-                    <p className="text-3xl font-semibold text-yellow-700 mt-1">{mediumRisk}</p>
-                    <p className="text-xs text-yellow-500 mt-0.5">Monitor closely</p>
-                </div>
-                <div
-                    className="bg-green-50 border border-green-200 rounded-lg p-4 cursor-pointer hover:bg-green-100 transition-colors"
-                    onClick={() => setFilter("low")}
-                >
-                    <p className="text-xs text-green-600 font-medium uppercase tracking-wide">{t.students.low} Risk</p>
-                    <p className="text-3xl font-semibold text-green-700 mt-1">{lowRisk}</p>
-                    <p className="text-xs text-green-500 mt-0.5">On track</p>
-                </div>
-            </div>
-
-            {/* Bulk action bar */}
-            <div className="flex flex-wrap gap-2 items-center p-3 bg-muted/50 rounded-lg border">
-                <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs gap-1"
-                    onClick={selectAllHighRisk}
-                >
-                    Select all high risk
-                </Button>
-                {selectedIds.size > 0 && (
-                    <>
-                        <span className="text-xs text-muted-foreground">
-                            {selectedIds.size} student{selectedIds.size > 1 ? "s" : ""} selected
-                        </span>
-                        <Button
-                            size="sm"
-                            className="text-xs gap-1 bg-green-600 hover:bg-green-700"
-                            onClick={bulkAction}
-                            disabled={bulkActioning}
-                        >
-                            {bulkActioning ? (
-                                <><Loader2 size={12} className="animate-spin" /> Actioning...</>
-                            ) : (
-                                <><CheckCircle size={12} /> Mark all as actioned</>
-                            )}
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs"
-                            onClick={clearSelection}
-                        >
-                            Clear
-                        </Button>
-                    </>
-                )}
-                {bulkDone && (
-                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                        <CheckCircle size={12} /> Bulk action completed!
-                    </span>
-                )}
-            </div>
-
-            <div className="flex gap-3 items-center flex-wrap">
-                <div className="relative flex-1 min-w-48">
-                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                        placeholder={t.students.search}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9"
-                    />
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                    {(["all", "high", "medium", "low"] as const).map((f) => (
-                        <Button
-                            key={f}
-                            size="sm"
-                            variant={filter === f ? "default" : "outline"}
-                            onClick={() => setFilter(f)}
-                            className="capitalize"
-                        >
-                            {f}
-                        </Button>
-                    ))}
-                </div>
-                {schoolFilter && (
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setSchoolFilter("")}
-                        className="text-xs text-muted-foreground gap-1"
+            {/* Stat cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {statCards.map((card) => (
+                    <div
+                        key={card.label}
+                        className="stat-card"
+                        onClick={() => window.location.href = card.href}
                     >
-                        ✕ {t.students.clearFilter}
-                    </Button>
-                )}
+                        <div className="flex items-center justify-between mb-4">
+                            <div
+                                style={{
+                                    width: "36px",
+                                    height: "36px",
+                                    borderRadius: "0.75rem",
+                                    background: "var(--neu-bg)",
+                                    boxShadow: "var(--shadow-raised-sm)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <card.icon size={16} style={{ color: card.color }} />
+                            </div>
+                            <ArrowRight size={14} style={{ color: "var(--text-muted)" }} />
+                        </div>
+                        <p style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>
+                            {card.label}
+                        </p>
+                        <p
+                            className="risk-score-display"
+                            style={{
+                                fontSize: "2.25rem",
+                                color: card.color,
+                                lineHeight: 1.1,
+                                margin: "4px 0",
+                            }}
+                        >
+                            {card.value}
+                        </p>
+                        <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>{card.sub}</p>
+                    </div>
+                ))}
             </div>
 
-            {loading && (
-                <div className="text-center py-20 text-muted-foreground">
-                    {t.students.loading}
+            {/* School overview */}
+            {schools.length > 0 && (
+        <div
+          style={{
+            background: "var(--neu-bg)",
+            boxShadow: "var(--shadow-raised)",
+            borderRadius: "1.25rem",
+            padding: "1.5rem",
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="section-label">{t.dashboard.schoolOverview}</p>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginTop: "2px" }}>
+                {t.dashboard.riskBreakdown}
+              </p>
+            </div>
+            <a
+              href="/dashboard/schools"
+              style={{
+                fontSize: "12px",
+                color: "var(--accent-blue)",
+                fontWeight: 500,
+                textDecoration: "none",
+              }}
+            >
+              View all →
+            </a>
+          </div>
+          <div className="space-y-3">
+            {schools.map((school) => (
+              <div
+                key={school.school_id}
+                className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all"
+                style={{ boxShadow: "var(--shadow-inset-sm)" }}
+                onClick={() => window.location.href = `/dashboard/students?school=${school.school_id}`}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-raised-sm)"
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-inset-sm)"
+                }}
+              >
+                <div>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    {school.school_name}
+                  </p>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                    {school.total} students
+                  </p>
                 </div>
-            )}
-
-            {error && (
-                <div className="flex items-center gap-2 text-destructive text-sm py-4">
-                    <AlertTriangle size={16} />
-                    {error}
+                <div className="flex items-center gap-2">
+                  {school.high > 0 && (
+                    <span style={{
+                      fontSize: "11px",
+                      padding: "3px 10px",
+                      borderRadius: "999px",
+                      background: "var(--accent-red-light)",
+                      color: "var(--accent-red)",
+                      fontWeight: 600,
+                    }}>
+                      {school.high} high
+                    </span>
+                  )}
+                  {school.medium > 0 && (
+                    <span style={{
+                      fontSize: "11px",
+                      padding: "3px 10px",
+                      borderRadius: "999px",
+                      background: "var(--accent-amber-light)",
+                      color: "var(--accent-amber)",
+                      fontWeight: 600,
+                    }}>
+                      {school.medium} mid
+                    </span>
+                  )}
+                  {school.low > 0 && (
+                    <span style={{
+                      fontSize: "11px",
+                      padding: "3px 10px",
+                      borderRadius: "999px",
+                      background: "var(--accent-green-light)",
+                      color: "var(--accent-green)",
+                      fontWeight: 600,
+                    }}>
+                      {school.low} low
+                    </span>
+                  )}
                 </div>
-            )}
-
-            {!loading && !error && filtered.length === 0 && (
-                <div className="text-center py-20 text-muted-foreground">
-                    {t.students.noStudents}
-                </div>
-            )}
-
-            {!loading && !error && filtered.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {filtered.map((student) => (
-                        <div key={student._id} className="relative">
-                            {/* Selection checkbox */}
-                            {student.status !== "actioned" && (
-                                <div
-                                    className="absolute top-3 right-3 z-10"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        toggleSelect(student._id)
-                                    }}
-                                >
-                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${selectedIds.has(student._id)
-                                            ? "bg-primary border-primary"
-                                            : "bg-background border-border hover:border-primary"
-                                        }`}>
-                                        {selectedIds.has(student._id) && (
-                                            <CheckCircle size={12} className="text-primary-foreground" />
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                            <RiskCard
-                                student={student}
-                                onActionTaken={fetchStudents}
-                            />
-                        </div>
-                    ))}
-                </div>
-            )}
-
+              </div>
+            ))}
+          </div>
         </div>
-    )
+    )}
+
+{/* Upload card */ }
+<div
+    style={{
+        background: "var(--neu-bg)",
+        boxShadow: "var(--shadow-raised)",
+        borderRadius: "1.25rem",
+        padding: "1.5rem",
+    }}
+>
+    <p className="section-label mb-1">{t.dashboard.uploadTitle}</p>
+    <p style={{
+        fontSize: "14px",
+        fontWeight: 600,
+        color: "var(--text-primary)",
+        marginBottom: "4px",
+    }}>
+        {t.dashboard.uploadSubtitle}
+    </p>
+    <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+        Upload attendance CSV to generate AI-powered dropout risk scores for all students.
+    </p>
+
+    <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => document.getElementById("csv-input")?.click()}
+        style={{
+            boxShadow: dragOver
+                ? `inset 3px 3px 8px #C4CAD4, inset -3px -3px 8px #FFFFFF, inset 0 0 0 2px var(--accent-blue)`
+                : "var(--shadow-inset)",
+            borderRadius: "1rem",
+            padding: "2.5rem",
+            textAlign: "center",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            background: dragOver ? "var(--accent-blue-light)" : "var(--neu-bg)",
+        }}
+    >
+        <input
+            id="csv-input"
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        />
+        <div
+            style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "0.75rem",
+                background: "var(--neu-bg)",
+                boxShadow: "var(--shadow-raised-sm)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 12px",
+            }}
+        >
+            <Upload size={20} style={{ color: "var(--accent-blue)" }} />
+        </div>
+        <p style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-primary)" }}>
+            {t.dashboard.dropCSV}
+        </p>
+        <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
+            Supports: student_id, name, class, absences, marks columns
+        </p>
+    </div>
+
+    {error && (
+        <div
+            className="flex items-center gap-2 mt-3 p-3 rounded-xl"
+            style={{ background: "var(--accent-red-light)", color: "var(--accent-red)", fontSize: "13px" }}
+        >
+            <AlertCircle size={14} /> {error}
+        </div>
+    )}
+
+    {file && !uploaded && (
+        <div
+            className="flex items-center justify-between mt-3 p-3 rounded-xl"
+            style={{ boxShadow: "var(--shadow-inset-sm)" }}
+        >
+            <div className="flex items-center gap-2">
+                <FileText size={14} style={{ color: "var(--text-muted)" }} />
+                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
+                    {file.name}
+                </span>
+                <span style={{
+                    fontSize: "11px",
+                    padding: "2px 8px",
+                    borderRadius: "999px",
+                    background: "var(--accent-blue-light)",
+                    color: "var(--accent-blue)",
+                }}>
+                    {(file.size / 1024).toFixed(1)} KB
+                </span>
+            </div>
+            <button
+                className="neu-btn-primary px-4 py-2"
+                style={{ fontSize: "12px" }}
+                onClick={handleUpload}
+                disabled={uploading}
+            >
+                {uploading ? "Uploading..." : "Upload"}
+            </button>
+        </div>
+    )}
+
+    {uploaded && (
+        <div className="mt-3 space-y-3">
+            <div
+                className="flex items-center gap-2 p-3 rounded-xl"
+                style={{ background: "var(--accent-green-light)", color: "var(--accent-green)", fontSize: "13px", fontWeight: 500 }}
+            >
+                <CheckCircle size={14} /> {t.dashboard.uploadSuccess}
+            </div>
+            <button
+                className="neu-btn flex items-center gap-2 px-4 py-2"
+                style={{ fontSize: "13px", color: "var(--accent-blue)" }}
+                onClick={() => window.location.href = "/dashboard/students"}
+            >
+                {t.dashboard.viewScores} <ArrowRight size={13} />
+            </button>
+        </div>
+    )}
+</div>
+
+    </div >
+  )
 }

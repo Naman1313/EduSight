@@ -1,16 +1,13 @@
 "use client"
 
-import RiskTrendGraph from "@/components/shared/RiskTrendGraph"
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import {
     CalendarX, TrendingDown, Wheat, BookOpen,
-    Lightbulb, CheckCircle, Loader2, ChevronDown, ChevronUp
+    Lightbulb, CheckCircle, Loader2, ChevronDown,
+    ChevronUp, User
 } from "lucide-react"
 import { Student } from "@/types"
+import RiskTrendGraph from "@/components/shared/RiskTrendGraph"
 
 interface RiskCardProps {
     student: Student
@@ -35,27 +32,30 @@ function getSignalIcon(signal: string) {
     return SIGNAL_ICONS["default"]
 }
 
-function getRiskColor(level: string) {
+function getRiskConfig(level: string) {
     if (level === "high") return {
-        badge: "bg-red-100 text-red-700 border-red-200",
-        score: "text-red-600",
-        bar: "bg-red-500",
-        initials: "bg-red-100 text-red-700",
-        pill: "bg-red-50 text-red-700 border border-red-200",
+        color: "#E63946",
+        lightBg: "#FDECEA",
+        label: "High Risk",
+        barColor: "#E63946",
+        initialsColor: "#E63946",
+        initialsBg: "#FDECEA",
     }
     if (level === "medium") return {
-        badge: "bg-yellow-100 text-yellow-700 border-yellow-200",
-        score: "text-yellow-600",
-        bar: "bg-yellow-500",
-        initials: "bg-yellow-100 text-yellow-700",
-        pill: "bg-yellow-50 text-yellow-700 border border-yellow-200",
+        color: "#F4A261",
+        lightBg: "#FEF4EC",
+        label: "Medium Risk",
+        barColor: "#F4A261",
+        initialsColor: "#C47B3A",
+        initialsBg: "#FEF4EC",
     }
     return {
-        badge: "bg-green-100 text-green-700 border-green-200",
-        score: "text-green-600",
-        bar: "bg-green-500",
-        initials: "bg-green-100 text-green-700",
-        pill: "bg-green-50 text-green-700 border border-green-200",
+        color: "#2DC653",
+        lightBg: "#E8F9ED",
+        label: "Low Risk",
+        barColor: "#2DC653",
+        initialsColor: "#1A8A36",
+        initialsBg: "#E8F9ED",
     }
 }
 
@@ -67,7 +67,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
     const [expanded, setExpanded] = useState(false)
     const [actioned, setActioned] = useState(student.status === "actioned")
 
-    const colors = getRiskColor(student.risk_level || "low")
+    const config = getRiskConfig(student.risk_level || "low")
 
     const initials = student.name
         .split(" ")
@@ -91,7 +91,6 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
             const data = await res.json()
             setAction(data.action)
             setActionFetched(true)
-
             await fetch(`http://localhost:5000/api/students/${student._id}/action`, {
                 method: "POST",
                 headers: {
@@ -100,7 +99,7 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                 },
                 body: JSON.stringify({ intervention_action: data.action }),
             })
-        } catch (err) {
+        } catch {
             setAction("Could not fetch suggestion. Please try again.")
         } finally {
             setLoadingAction(false)
@@ -118,7 +117,6 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                 },
                 body: JSON.stringify({ status: "actioned" }),
             })
-
             await fetch("http://localhost:5000/api/interventions", {
                 method: "POST",
                 headers: {
@@ -131,7 +129,6 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
                     status: "completed",
                 }),
             })
-
             setActioned(true)
             onActionTaken()
         } catch (err) {
@@ -142,176 +139,304 @@ export default function RiskCard({ student, onActionTaken }: RiskCardProps) {
     }
 
     return (
-        <Card className={`transition-all duration-200 ${actioned ? "opacity-60" : ""}`}>
-            <CardContent className="pt-5 space-y-4">
+        <div
+            style={{
+                background: "var(--neu-bg)",
+                boxShadow: actioned
+                    ? "var(--shadow-inset)"
+                    : "var(--shadow-raised)",
+                borderRadius: "1.25rem",
+                padding: "1.25rem",
+                transition: "all 0.3s ease",
+                opacity: actioned ? 0.75 : 1,
+            }}
+        >
 
-                {/* Header */}
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${colors.initials}`}>
-                            {initials}
-                        </div>
-                        <div>
-                            <p className="font-medium text-sm leading-tight">{student.name}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                                Class {student.class_grade} · {student.school_name}
-                            </p>
-                        </div>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-2 mb-4">
+                <div className="flex items-center gap-3">
+                    <div
+                        className="initials-badge flex-shrink-0"
+                        style={{
+                            width: "40px",
+                            height: "40px",
+                            color: config.initialsColor,
+                            background: config.initialsBg,
+                            boxShadow: `2px 2px 6px ${config.color}30, -2px -2px 6px #FFFFFF`,
+                        }}
+                    >
+                        {initials}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium border ${colors.badge}`}>
-                        {actioned ? "Actioned" : `${student.risk_level} risk`}
+                    <div>
+                        <p style={{
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            color: "var(--text-primary)",
+                            lineHeight: 1.2,
+                        }}>
+                            {student.name}
+                        </p>
+                        <p style={{
+                            fontSize: "11px",
+                            color: "var(--text-muted)",
+                            marginTop: "2px",
+                        }}>
+                            Class {student.class_grade} · {student.school_name}
+                        </p>
+                    </div>
+                </div>
+                <span
+                    style={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        padding: "4px 10px",
+                        borderRadius: "999px",
+                        background: config.lightBg,
+                        color: config.color,
+                        letterSpacing: "0.03em",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                    }}
+                >
+                    {actioned ? "✓ Actioned" : config.label}
+                </span>
+            </div>
+
+            {/* Risk Score Well */}
+            <div className="flex items-center gap-4 mb-4">
+                <div
+                    className="score-well flex-shrink-0"
+                    style={{
+                        width: "72px",
+                        height: "72px",
+                        boxShadow: `inset 4px 4px 10px #C4CAD4, inset -4px -4px 10px #FFFFFF`,
+                    }}
+                >
+                    <span
+                        className="risk-score-display"
+                        style={{
+                            fontSize: "22px",
+                            color: config.color,
+                            lineHeight: 1,
+                        }}
+                    >
+                        {student.risk_score}
+                    </span>
+                    <span style={{
+                        fontSize: "9px",
+                        color: "var(--text-muted)",
+                        fontWeight: 500,
+                        letterSpacing: "0.04em",
+                    }}>
+                        /100
                     </span>
                 </div>
-
-                {/* Risk Score */}
-                <div className="space-y-1.5">
-                    <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-muted-foreground">Dropout risk score</span>
-                        <span className={`text-2xl font-semibold ${colors.score}`}>
-                            {student.risk_score}
+                <div className="flex-1 space-y-2">
+                    <div className="flex justify-between">
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                            Dropout risk
+                        </span>
+                        <span style={{
+                            fontSize: "10px",
+                            color: "var(--text-muted)",
+                            fontFamily: "'JetBrains Mono', monospace",
+                        }}>
+                            60-day window
                         </span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="risk-bar-track">
                         <div
-                            className={`h-full rounded-full transition-all duration-700 ${colors.bar}`}
-                            style={{ width: `${student.risk_score}%` }}
+                            className="risk-bar-fill"
+                            style={{
+                                width: `${student.risk_score}%`,
+                                background: config.barColor,
+                            }}
                         />
                     </div>
-                    <p className="text-xs text-muted-foreground">60-day prediction window</p>
-                </div>
-
-                {/* Signals */}
-                {student.top_signals && student.top_signals.length > 0 && (
-                    <div className="space-y-1.5">
-                        <p className="text-xs font-medium text-muted-foreground">Warning signals</p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {student.top_signals.map((signal, i) => {
-                                const Icon = getSignalIcon(signal)
-                                return (
-                                    <span
-                                        key={i}
-                                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${colors.pill}`}
-                                    >
-                                        <Icon size={11} />
-                                        {signal}
-                                    </span>
-                                )
-                            })}
-                        </div>
+                    <div className="flex justify-between">
+                        <span style={{ fontSize: "10px", color: "#2DC653" }}>Safe</span>
+                        <span style={{ fontSize: "10px", color: "#E63946" }}>Critical</span>
                     </div>
-                )}
-
-                {/* Risk Trend Graph */}
-                <div className="border rounded-lg p-3 bg-muted/20">
-                    <RiskTrendGraph
-                        studentId={student._id}
-                        studentName={student.name}
-                        currentScore={student.risk_score}
-                    />
                 </div>
+            </div>
 
-                {/* Action Box */}
-                {!actioned && (
-                    <div className="space-y-2">
-                        {!actionFetched ? (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full gap-2 text-xs"
-                                onClick={fetchSuggestion}
-                                disabled={loadingAction}
-                            >
-                                {loadingAction ? (
-                                    <><Loader2 size={12} className="animate-spin" /> Generating suggestion...</>
-                                ) : (
-                                    <><Lightbulb size={12} /> Get intervention suggestion</>
-                                )}
-                            </Button>
-                        ) : (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
-                                <p className="text-xs font-medium text-green-800 flex items-center gap-1">
-                                    <Lightbulb size={11} /> Suggested action
-                                </p>
-                                <div className="space-y-1">
-                                    {action.split("\n").filter(Boolean).map((line, i) => {
-                                        const isHeader = line.startsWith("IMMEDIATE") ||
-                                            line.startsWith("MONITOR") ||
-                                            line.startsWith("LOW RISK") ||
-                                            line.startsWith("Key concerns") ||
-                                            line.startsWith("Recommended") ||
-                                            line.startsWith("Warning") ||
-                                            line.startsWith("Preventive")
-                                        const isStep = /^\d\./.test(line.trim())
-                                        const isEvidence = line.startsWith("Evidence base")
-
-                                        if (isEvidence && !expanded) return null
-
-                                        return (
-                                            <p
-                                                key={i}
-                                                className={`text-xs leading-relaxed ${isHeader
-                                                    ? "font-semibold text-green-900"
-                                                    : isStep
-                                                        ? "text-green-700 pl-2"
-                                                        : isEvidence
-                                                            ? "text-green-500 italic text-[10px]"
-                                                            : "text-green-700"
-                                                    }`}
-                                            >
-                                                {line}
-                                            </p>
-                                        )
-                                    })}
-                                </div>
-                                <button
-                                    onClick={() => setExpanded(!expanded)}
-                                    className="text-xs text-green-600 flex items-center gap-1 mt-1"
+            {/* Warning Signals */}
+            {student.top_signals && student.top_signals.length > 0 && (
+                <div className="mb-4">
+                    <p className="section-label mb-2">Warning signals</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {student.top_signals.map((signal, i) => {
+                            const Icon = getSignalIcon(signal)
+                            return (
+                                <span
+                                    key={i}
+                                    className="signal-tag"
+                                    style={{ color: config.color }}
                                 >
-                                    {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                                    {expanded ? "Hide evidence" : "Show evidence base"}
-                                </button>
-                            </div>
-                        )}
+                                    <Icon size={10} />
+                                    {signal}
+                                </span>
+                            )
+                        })}
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* Actioned state */}
-                {actioned && (
-                    <div className="bg-muted rounded-lg p-3">
-                        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-2">
-                            <CheckCircle size={11} /> Action completed
-                        </p>
-                        {action && (
-                            <div className="space-y-1">
-                                {action.split("\n").filter(Boolean).slice(0, 4).map((line, i) => (
-                                    <p key={i} className="text-xs text-muted-foreground leading-relaxed">
-                                        {line}
-                                    </p>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+            {/* Trend Graph */}
+            <div
+                className="mb-4 p-3"
+                style={{
+                    background: "var(--neu-bg)",
+                    boxShadow: "var(--shadow-inset-sm)",
+                    borderRadius: "0.75rem",
+                }}
+            >
+                <RiskTrendGraph
+                    studentId={student._id}
+                    studentName={student.name}
+                    currentScore={student.risk_score}
+                />
+            </div>
 
-                {/* Footer buttons */}
-                {!actioned && (
-                    <div className="flex gap-2 pt-1">
-                        <Button
-                            size="sm"
-                            className="flex-1 text-xs"
-                            onClick={markActioned}
-                            disabled={marking}
+            {/* Action Box */}
+            {!actioned && (
+                <div className="mb-4">
+                    {!actionFetched ? (
+                        <button
+                            className="neu-btn w-full py-2.5 flex items-center justify-center gap-2"
+                            style={{ fontSize: "12px", color: "var(--accent-blue)" }}
+                            onClick={fetchSuggestion}
+                            disabled={loadingAction}
                         >
-                            {marking ? (
-                                <><Loader2 size={12} className="animate-spin mr-1" /> Marking...</>
+                            {loadingAction ? (
+                                <><Loader2 size={12} className="animate-spin" /> Generating suggestion...</>
                             ) : (
-                                <><CheckCircle size={12} className="mr-1" /> Mark as actioned</>
+                                <><Lightbulb size={12} /> Get AI intervention suggestion</>
                             )}
-                        </Button>
-                    </div>
-                )}
+                        </button>
+                    ) : (
+                        <div
+                            style={{
+                                background: "var(--neu-bg)",
+                                boxShadow: `inset 3px 3px 8px #C4CAD4, inset -3px -3px 8px #FFFFFF, inset 0 0 0 1px ${config.color}20`,
+                                borderRadius: "0.75rem",
+                                padding: "0.875rem",
+                            }}
+                        >
+                            <p style={{
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                color: "#2DC653",
+                                marginBottom: "6px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                            }}>
+                                <Lightbulb size={11} /> AI Suggested Action
+                            </p>
+                            <div className="space-y-1">
+                                {action.split("\n").filter(Boolean).map((line, i) => {
+                                    const isHeader = line.startsWith("IMMEDIATE") ||
+                                        line.startsWith("MONITOR") ||
+                                        line.startsWith("LOW RISK") ||
+                                        line.startsWith("Key concerns") ||
+                                        line.startsWith("Recommended") ||
+                                        line.startsWith("Warning") ||
+                                        line.startsWith("Preventive")
+                                    const isStep = /^\d\./.test(line.trim())
+                                    const isEvidence = line.startsWith("Evidence base")
+                                    if (isEvidence && !expanded) return null
+                                    return (
+                                        <p
+                                            key={i}
+                                            style={{
+                                                fontSize: "11px",
+                                                lineHeight: 1.6,
+                                                color: isHeader
+                                                    ? "var(--text-primary)"
+                                                    : isEvidence
+                                                        ? "var(--text-muted)"
+                                                        : "var(--text-secondary)",
+                                                fontWeight: isHeader ? 600 : 400,
+                                                paddingLeft: isStep ? "4px" : 0,
+                                            }}
+                                        >
+                                            {line}
+                                        </p>
+                                    )
+                                })}
+                            </div>
+                            <button
+                                onClick={() => setExpanded(!expanded)}
+                                style={{
+                                    fontSize: "11px",
+                                    color: "var(--text-muted)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "3px",
+                                    marginTop: "6px",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                                {expanded ? "Hide evidence" : "Show evidence base"}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
 
-            </CardContent>
-        </Card>
+            {/* Actioned state */}
+            {actioned && (
+                <div
+                    className="mb-4 p-3"
+                    style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "var(--shadow-inset-sm)",
+                        borderRadius: "0.75rem",
+                    }}
+                >
+                    <p style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "var(--text-muted)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        marginBottom: "4px",
+                    }}>
+                        <CheckCircle size={11} /> Action completed
+                    </p>
+                    {action && (
+                        <p style={{
+                            fontSize: "11px",
+                            color: "var(--text-muted)",
+                            lineHeight: 1.5,
+                        }}>
+                            {action.split("\n")[0]}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {/* Mark as actioned button */}
+            {!actioned && (
+                <button
+                    className="neu-btn-primary w-full py-2.5 flex items-center justify-center gap-2"
+                    style={{ fontSize: "13px" }}
+                    onClick={markActioned}
+                    disabled={marking}
+                >
+                    {marking ? (
+                        <><Loader2 size={13} className="animate-spin" /> Marking...</>
+                    ) : (
+                        <><CheckCircle size={13} /> Mark as actioned</>
+                    )}
+                </button>
+            )}
+
+        </div>
     )
 }
