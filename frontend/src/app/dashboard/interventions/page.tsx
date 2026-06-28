@@ -9,6 +9,7 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Legend
 } from "recharts"
+import AnimatedCounter from "@/components/shared/AnimatedCounter"
 
 interface Intervention {
     _id: string
@@ -153,7 +154,11 @@ export default function InterventionsPage() {
                             className="risk-score-display"
                             style={{ fontSize: "2rem", color: card.color, lineHeight: 1.1, marginTop: "2px" }}
                         >
-                            {card.value}
+                            {typeof card.value === "number" ? (
+                                <AnimatedCounter value={card.value} duration={1000} />
+                            ) : typeof card.value === "string" && card.value.endsWith("%") ? (
+                                <><AnimatedCounter value={parseInt(card.value)} duration={1000} />%</>
+                            ) : card.value}
                         </p>
                         {card.sub && (
                             <p style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
@@ -347,7 +352,7 @@ export default function InterventionsPage() {
                                                 <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
                                                     {(() => {
                                                         const text = intervention.action_taken;
-                                                        
+
                                                         // Fallback for simple manual text
                                                         if (!text.includes("IMMEDIATE") && text.length < 50) {
                                                             return <p>{text}</p>;
@@ -374,20 +379,20 @@ export default function InterventionsPage() {
                                                         const summaryLines: string[] = [];
                                                         let inEvidence = false;
                                                         for (const line of lines) {
-                                                            const isHeader = line.startsWith("IMMEDIATE") || 
-                                                                line.startsWith("MONITOR") || 
-                                                                line.startsWith("LOW RISK") || 
-                                                                line.startsWith("Key concerns") || 
+                                                            const isHeader = line.startsWith("IMMEDIATE") ||
+                                                                line.startsWith("MONITOR") ||
+                                                                line.startsWith("LOW RISK") ||
+                                                                line.startsWith("Key concerns") ||
                                                                 line.startsWith("Recommended") ||
                                                                 line.startsWith("Warning") ||
                                                                 line.startsWith("Preventive");
-                                                                
+
                                                             if (line.toLowerCase().startsWith("evidence base")) {
                                                                 inEvidence = true;
                                                             } else if (inEvidence && isHeader) {
                                                                 inEvidence = false;
                                                             }
-                                                            
+
                                                             if (!inEvidence && !isHeader) {
                                                                 let cleanLine = line.replace(/^\d+\.\s*/, '');
                                                                 const match = cleanLine.match(/^([a-zA-Z]+)\b/);
@@ -401,7 +406,7 @@ export default function InterventionsPage() {
                                                                 summaryLines.push(cleanLine);
                                                             }
                                                         }
-                                                        
+
                                                         if (summaryLines.length === 0) {
                                                             return <p>ACTION Taken for {intervention.student_name}</p>;
                                                         }

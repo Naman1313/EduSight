@@ -7,6 +7,9 @@ import {
     ArrowRight, School, Users, AlertTriangle, TrendingUp
 } from "lucide-react"
 import { useTranslations } from "@/lib/useTranslations"
+import { ToastContainer } from "@/components/shared/Toast"
+import { useToast } from "@/lib/useToast"
+import AnimatedCounter from "@/components/shared/AnimatedCounter"
 
 interface Stats {
     total_schools: number
@@ -33,6 +36,7 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<Stats | null>(null)
     const [schools, setSchools] = useState<SchoolStat[]>([])
     const [statsLoading, setStatsLoading] = useState(true)
+    const { toasts, toast, removeToast } = useToast()
     const { t } = useTranslations()
 
     useEffect(() => { fetchStats() }, [])
@@ -62,7 +66,9 @@ export default function DashboardPage() {
 
     const handleUpload = async () => {
         if (!file) return
-        setUploading(true); setError("")
+        setUploading(true)
+        setError("")
+        toast.info("Uploading and processing student data...")
         try {
             const formData = new FormData()
             formData.append("file", file)
@@ -73,10 +79,15 @@ export default function DashboardPage() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.message)
-            setUploaded(true); fetchStats()
+            setUploaded(true)
+            fetchStats()
+            toast.success(`✓ ${data.message}`)
         } catch (err: any) {
             setError(err.message || "Upload failed")
-        } finally { setUploading(false) }
+            toast.error("Upload failed. Please try again.")
+        } finally {
+            setUploading(false)
+        }
     }
 
     const statCards = [
@@ -158,7 +169,9 @@ export default function DashboardPage() {
                                     margin: "4px 0",
                                 }}
                             >
-                                {card.value}
+                                {typeof card.value === "number" ? (
+                                    <AnimatedCounter value={card.value} duration={1200} />
+                                ) : card.value}
                             </p>
                             <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>{card.sub}</p>
                         </div>
@@ -380,7 +393,7 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
-
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
         </div >
     )
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { ArrowLeft, School, Users, AlertTriangle, CheckCircle } from "lucide-react"
+import AnimatedCounter from "@/components/shared/AnimatedCounter"
 
 interface SchoolStat {
     school_id: string
@@ -98,7 +99,9 @@ export default function SchoolsPage() {
                                 className="risk-score-display"
                                 style={{ fontSize: "2rem", color: card.color, lineHeight: 1.1, marginTop: "2px" }}
                             >
-                                {card.value}
+                                {typeof card.value === "number" ? (
+                                    <AnimatedCounter value={card.value} duration={1000} />
+                                ) : card.value}
                             </p>
                         </div>
                     ))}

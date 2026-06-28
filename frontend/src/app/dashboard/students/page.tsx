@@ -6,6 +6,9 @@ import { Student } from "@/types"
 import RiskCard from "@/components/shared/RiskCard"
 import { useTranslations } from "@/lib/useTranslations"
 import { SkeletonCard, SkeletonStatCard } from "@/components/shared/SkeletonCard"
+import { ToastContainer } from "@/components/shared/Toast"
+import { useToast } from "@/lib/useToast"
+import AnimatedCounter from "@/components/shared/AnimatedCounter"
 
 export default function StudentsPage() {
     const [students, setStudents] = useState<Student[]>([])
@@ -19,6 +22,7 @@ export default function StudentsPage() {
     const [bulkActioning, setBulkActioning] = useState(false)
     const [bulkDone, setBulkDone] = useState(false)
     const { t } = useTranslations()
+    const { toasts, toast, removeToast } = useToast()
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search)
@@ -34,7 +38,7 @@ export default function StudentsPage() {
     useEffect(() => {
         let result = students
         if (schoolFilter) result = result.filter((s) => s.school_id === schoolFilter)
-        if (filter !== "all") result = result.filter((s) => s.risk_level === filter)
+        if (filter !== "all") result = result.filter((s) => s.risk_level?.toLowerCase() === filter)
         if (search.trim()) {
             result = result.filter((s) =>
                 s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -62,9 +66,9 @@ export default function StudentsPage() {
         }
     }
 
-    const highRisk = students.filter((s) => s.risk_level === "high").length
-    const mediumRisk = students.filter((s) => s.risk_level === "medium").length
-    const lowRisk = students.filter((s) => s.risk_level === "low").length
+    const highRisk = students.filter((s) => s.risk_level?.toLowerCase() === "high").length
+    const mediumRisk = students.filter((s) => s.risk_level?.toLowerCase() === "medium").length
+    const lowRisk = students.filter((s) => s.risk_level?.toLowerCase() === "low").length
 
     const toggleSelect = (id: string) => {
         setSelectedIds((prev) => {
@@ -90,6 +94,7 @@ export default function StudentsPage() {
     const bulkAction = async () => {
         if (selectedIds.size === 0) return
         setBulkActioning(true)
+        toast.info(`Processing ${selectedIds.size} students...`)
         try {
             await Promise.all(Array.from(selectedIds).map(async (id) => {
                 const student = students.find((s) => s._id === id)
@@ -107,8 +112,10 @@ export default function StudentsPage() {
             setBulkDone(true)
             setSelectedIds(new Set())
             fetchStudents()
+            toast.success(`✓ ${selectedIds.size} students marked as actioned!`)
         } catch (err) {
             console.error(err)
+            toast.error("Bulk action failed. Please try again.")
         } finally {
             setBulkActioning(false)
         }
@@ -144,7 +151,8 @@ export default function StudentsPage() {
             </div>
 
             {/* Risk tier cards */}
-            <div className="grid grid-cols-3 gap-4">
+            {!loading && (
+                <div className="grid grid-cols-3 gap-4">
                 {[
                     { label: "High Risk", count: highRisk, color: "var(--accent-red)", bg: "var(--accent-red-light)", key: "high" },
                     { label: "Medium Risk", count: mediumRisk, color: "var(--accent-amber)", bg: "var(--accent-amber-light)", key: "medium" },
@@ -165,11 +173,12 @@ export default function StudentsPage() {
                             className="risk-score-display"
                             style={{ fontSize: "2.5rem", color: tier.color, lineHeight: 1 }}
                         >
-                            {tier.count}
+                            <AnimatedCounter value={tier.count} duration={1000} />
                         </p>
                     </div>
                 ))}
-            </div>
+                </div>
+            )}
 
             {/* Bulk action bar */}
             <div
@@ -358,11 +367,17 @@ export default function StudentsPage() {
                                     </div>
                                 </div>
                             )}
-                            <RiskCard student={student} onActionTaken={fetchStudents} />
+                            <RiskCard
+                                student={student}
+                                onActionTaken={fetchStudents}
+                                onToast={(msg, type) => toast[type](msg)}
+                            />
                         </div>
                     ))}
                 </div>
             )}
+
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
 
         </div>
     )
