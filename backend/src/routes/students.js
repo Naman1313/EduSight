@@ -23,7 +23,11 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
     stream.pipe(csv())
       .on("data", (row) => results.push(row))
       .on("end", async () => {
+        const total = results.length
         let saved = 0
+        
+        res.setHeader("Content-Type", "application/json")
+        res.setHeader("Transfer-Encoding", "chunked")
         for (const row of results) {
           try {
             const mlRes = await axios.post(`${process.env.ML_API_URL}/predict`, {
@@ -66,11 +70,13 @@ router.post("/upload", authMiddleware, upload.single("file"), async (req, res) =
             { upsert: true, new: true }
           )
             saved++
+            res.write(JSON.stringify({ processed: saved, total }) + "\n")
           } catch (e) {
             console.error("Error processing student:", row.student_id, e.message)
           }
         }
-        res.json({ message: `Processed ${saved} students successfully` })
+        res.write(JSON.stringify({ done: true, message: `Processed ${saved} students successfully` }) + "\n")
+        res.end()
       })
   } catch (err) {
     res.status(500).json({ message: err.message })

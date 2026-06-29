@@ -10,6 +10,7 @@ import {
     Tooltip, ResponsiveContainer, Legend
 } from "recharts"
 import AnimatedCounter from "@/components/shared/AnimatedCounter"
+import { useRouter } from "next/navigation"
 
 interface Intervention {
     _id: string
@@ -34,6 +35,7 @@ interface Stats {
 }
 
 export default function InterventionsPage() {
+    const router = useRouter()
     const [interventions, setInterventions] = useState<Intervention[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
@@ -116,7 +118,7 @@ export default function InterventionsPage() {
         <div className="space-y-6">
 
             <div className="flex items-center gap-3">
-                <button className="neu-btn p-2" onClick={() => window.location.href = "/dashboard"}>
+                <button className="neu-btn p-2" onClick={() => router.push("/dashboard")}>
                     <ArrowLeft size={16} style={{ color: "var(--text-muted)" }} />
                 </button>
                 <div>
@@ -246,7 +248,7 @@ export default function InterventionsPage() {
                     <button
                         className="neu-btn px-4 py-2 mt-4"
                         style={{ fontSize: "12px", color: "var(--accent-blue)" }}
-                        onClick={() => window.location.href = "/dashboard/students"}
+                        onClick={() => router.push("/dashboard/students")}
                     >
                         Go to Students →
                     </button>

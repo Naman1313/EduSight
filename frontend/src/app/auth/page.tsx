@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { GraduationCap, Mail, Lock, AlertCircle } from "lucide-react"
+import { useDarkMode } from "@/lib/useDarkMode"
 
 export default function AuthPage() {
     const [email, setEmail] = useState("rajiv@education.gov.in")
@@ -9,6 +10,7 @@ export default function AuthPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
     const [isRegistering, setIsRegistering] = useState(false)
+    const { isDark, mounted } = useDarkMode()
 
     const handleAuth = async () => {
         setLoading(true)

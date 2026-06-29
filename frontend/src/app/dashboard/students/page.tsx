@@ -10,13 +10,16 @@ import { ToastContainer } from "@/components/shared/Toast"
 import { useToast } from "@/lib/useToast"
 import AnimatedCounter from "@/components/shared/AnimatedCounter"
 import Confetti from "@/components/shared/Confetti"
+import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function StudentsPage() {
+    const router = useRouter()
     const [students, setStudents] = useState<Student[]>([])
     const [filtered, setFiltered] = useState<Student[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
-    const [filter, setFilter] = useState<"all" | "high" | "medium" | "low">("all")
+    const [filter, setFilter] = useState<"all" | "high" | "medium" | "low" | "actioned">("all")
     const [schoolFilter, setSchoolFilter] = useState<string>("")
     const [error, setError] = useState("")
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -40,7 +43,13 @@ export default function StudentsPage() {
     useEffect(() => {
         let result = students
         if (schoolFilter) result = result.filter((s) => s.school_id === schoolFilter)
-        if (filter !== "all") result = result.filter((s) => s.risk_level?.toLowerCase() === filter)
+        if (filter !== "all") {
+            if (filter === "actioned") {
+                result = result.filter((s) => s.status === "actioned")
+            } else {
+                result = result.filter((s) => s.risk_level?.toLowerCase() === filter)
+            }
+        }
         if (search.trim()) {
             result = result.filter((s) =>
                 s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -48,7 +57,14 @@ export default function StudentsPage() {
                 s.class_grade?.toLowerCase().includes(search.toLowerCase())
             )
         }
-        setFiltered(result)
+        
+        const sortedResult = [...result].sort((a, b) => {
+            if (a.status === "actioned" && b.status !== "actioned") return 1;
+            if (a.status !== "actioned" && b.status === "actioned") return -1;
+            return 0;
+        });
+
+        setFiltered(sortedResult)
     }, [students, filter, search, schoolFilter])
 
     const fetchStudents = async () => {
@@ -132,6 +148,7 @@ export default function StudentsPage() {
         { key: "high", label: "High", color: "var(--accent-red)" },
         { key: "medium", label: "Medium", color: "var(--accent-amber)" },
         { key: "low", label: "Low", color: "var(--accent-green)" },
+        { key: "actioned", label: "Actioned", color: "var(--accent-blue)" },
     ]
 
     return (
@@ -141,7 +158,7 @@ export default function StudentsPage() {
             <div className="flex items-center gap-3">
                 <button
                     className="neu-btn p-2"
-                    onClick={() => window.location.href = "/dashboard"}
+                    onClick={() => router.push("/dashboard")}
                 >
                     <ArrowLeft size={16} style={{ color: "var(--text-muted)" }} />
                 </button>
@@ -341,52 +358,72 @@ export default function StudentsPage() {
 
             {/* Student cards grid */}
             {!loading && !error && filtered.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {filtered.map((student) => (
-                        <div key={student._id} className="relative">
-                            {student.status !== "actioned" && (
-                                <div
-                                    className="absolute top-3 right-3 z-10"
-                                    onClick={(e) => { e.stopPropagation(); toggleSelect(student._id) }}
-                                >
+                <motion.div
+                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: {},
+                        visible: { transition: { staggerChildren: 0.02 } }
+                    }}
+                >
+                    {filtered.map((student, index) => (
+                        <motion.div
+                            key={student._id}
+                            className="relative"
+                            variants={{
+                                hidden: { opacity: 0, y: 10 },
+                                visible: {
+                                    opacity: 1,
+                                    y: 0,
+                                    transition: { duration: 0.2, ease: "easeOut" }
+                                }
+                            }}
+                        >
+                            {
+                                student.status !== "actioned" && (
                                     <div
-                                        style={{
-                                            width: "20px",
-                                            height: "20px",
-                                            borderRadius: "6px",
-                                            boxShadow: selectedIds.has(student._id)
-                                                ? "var(--shadow-inset-sm)"
-                                                : "var(--shadow-raised-sm)",
-                                            background: selectedIds.has(student._id)
-                                                ? "var(--accent-blue)"
-                                                : "var(--neu-bg)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            cursor: "pointer",
-                                            transition: "all 0.15s ease",
-                                        }}
+                                        className="absolute top-3 right-3 z-10"
+                                        onClick={(e) => { e.stopPropagation(); toggleSelect(student._id) }}
                                     >
-                                        {selectedIds.has(student._id) && (
-                                            <CheckCircle size={12} style={{ color: "white" }} />
-                                        )}
+                                        <div
+                                            style={{
+                                                width: "20px",
+                                                height: "20px",
+                                                borderRadius: "6px",
+                                                boxShadow: selectedIds.has(student._id)
+                                                    ? "var(--shadow-inset-sm)"
+                                                    : "var(--shadow-raised-sm)",
+                                                background: selectedIds.has(student._id)
+                                                    ? "var(--accent-blue)"
+                                                    : "var(--neu-bg)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                cursor: "pointer",
+                                                transition: "all 0.15s ease",
+                                            }}
+                                        >
+                                            {selectedIds.has(student._id) && (
+                                                <CheckCircle size={12} style={{ color: "white" }} />
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                            <RiskCard
+                                )
+                            }
+                            < RiskCard
                                 student={student}
                                 onActionTaken={fetchStudents}
                                 onToast={(msg, type) => toast[type](msg)}
                             />
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
-            )}
+                </motion.div >
+            )
+            }
             <Confetti trigger={showConfetti} count={6} />
             <ToastContainer toasts={toasts} onRemove={removeToast} />
 
-            <ToastContainer toasts={toasts} onRemove={removeToast} />
-
-        </div>
+        </div >
     )
 }

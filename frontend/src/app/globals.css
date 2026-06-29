@@ -292,3 +292,211 @@ body {
     background-position: -200% 0;
   }
 }
+
+/* ===================== ANIMATED RISK BAR ===================== */
+
+@keyframes risk-bar-grow {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: var(--bar-width);
+  }
+}
+
+.risk-bar-fill-animated {
+  height: 100%;
+  border-radius: 999px;
+  animation: risk-bar-grow 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  width: var(--bar-width);
+}
+
+/* ===================== GLASSMORPHISM ===================== */
+
+.glass-card {
+  background: linear-gradient(135deg,
+      rgba(67, 97, 238, 0.12) 0%,
+      rgba(67, 97, 238, 0.06) 50%,
+      rgba(45, 198, 83, 0.08) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(67, 97, 238, 0.2);
+  border-radius: 1.25rem;
+  box-shadow:
+    6px 6px 14px rgba(196, 202, 212, 0.6),
+    -6px -6px 14px rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(67, 97, 238, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.8),
+      transparent);
+}
+
+.glass-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%,
+      rgba(67, 97, 238, 0.06) 0%,
+      transparent 60%);
+  pointer-events: none;
+}
+
+.glass-card-red {
+  background: linear-gradient(135deg,
+      rgba(230, 57, 70, 0.12) 0%,
+      rgba(230, 57, 70, 0.06) 50%,
+      rgba(244, 162, 97, 0.08) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(230, 57, 70, 0.2);
+  border-radius: 1.25rem;
+  box-shadow:
+    6px 6px 14px rgba(196, 202, 212, 0.6),
+    -6px -6px 14px rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(230, 57, 70, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card-red::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.8),
+      transparent);
+}
+
+/* ===================== DARK MODE ===================== */
+
+.dark {
+  --neu-bg: #1E2430;
+  --neu-light: #252D3D;
+  --neu-dark: #161C28;
+
+  --shadow-raised: 6px 6px 14px #161C28, -6px -6px 14px #262E40;
+  --shadow-raised-sm: 4px 4px 8px #161C28, -4px -4px 8px #262E40;
+  --shadow-inset: inset 4px 4px 10px #161C28, inset -4px -4px 10px #262E40;
+  --shadow-inset-sm: inset 2px 2px 6px #161C28, inset -2px -2px 6px #262E40;
+  --shadow-pressed: inset 3px 3px 8px #161C28, inset -1px -1px 4px #262E40;
+
+  --text-primary: #E8EDF8;
+  --text-secondary: #B0BAD0;
+  --text-muted: #6B7A99;
+  --text-accent: #6B8AFF;
+
+  --accent-blue: #6B8AFF;
+  --accent-blue-light: #1E2A45;
+  --accent-red: #FF6B6B;
+  --accent-red-light: #2D1A1A;
+  --accent-amber: #FFB347;
+  --accent-amber-light: #2D2010;
+  --accent-green: #4ADE80;
+  --accent-green-light: #0F2D1A;
+
+  --background: 220 25% 14%;
+  --foreground: 220 20% 92%;
+  --card: 220 25% 14%;
+  --card-foreground: 220 20% 92%;
+  --primary: 231 100% 72%;
+  --primary-foreground: 220 25% 14%;
+  --muted: 220 20% 18%;
+  --muted-foreground: 220 15% 55%;
+  --border: 220 20% 22%;
+  --input: 220 20% 18%;
+}
+
+.dark body {
+  background-color: var(--neu-bg);
+  color: var(--text-primary);
+}
+
+.dark .neu-btn {
+  background: var(--neu-bg);
+  color: var(--text-primary);
+}
+
+.dark .neu-btn-primary {
+  background: var(--accent-blue);
+  box-shadow: 4px 4px 10px #161C28, -2px -2px 8px #2A3550;
+}
+
+.dark .glass-card {
+  background: linear-gradient(135deg,
+      rgba(107, 138, 255, 0.15) 0%,
+      rgba(107, 138, 255, 0.08) 50%,
+      rgba(74, 222, 128, 0.10) 100%);
+  border: 1px solid rgba(107, 138, 255, 0.25);
+  box-shadow:
+    6px 6px 14px rgba(22, 28, 40, 0.8),
+    -6px -6px 14px rgba(38, 46, 64, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-card-red {
+  background: linear-gradient(135deg,
+      rgba(255, 107, 107, 0.15) 0%,
+      rgba(255, 107, 107, 0.08) 50%,
+      rgba(255, 179, 71, 0.10) 100%);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  box-shadow:
+    6px 6px 14px rgba(22, 28, 40, 0.8),
+    -6px -6px 14px rgba(38, 46, 64, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .stat-card {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised);
+}
+
+.dark .skeleton-pulse {
+  background: linear-gradient(90deg,
+      #1A2133 0%,
+      #252D3D 40%,
+      #1A2133 100%);
+  background-size: 200% 100%;
+  box-shadow: inset 2px 2px 5px #161C28, inset -2px -2px 5px #262E40;
+}
+
+.dark .nav-link:hover {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.dark .signal-tag {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset-sm);
+}
+
+.dark .neu-input {
+  background: var(--neu-bg);
+  color: var(--text-primary);
+}
+
+.dark .risk-bar-track {
+  background: var(--neu-bg);
+  box-shadow: var(--shadow-inset-sm);
+}

@@ -5,17 +5,13 @@ const authMiddleware = require("../middleware/auth")
 router.get("/stats", authMiddleware, async (req, res) => {
   try {
     const allStudents = await Student.find()
-
     const schoolMap = {}
     allStudents.forEach((s) => {
       if (!schoolMap[s.school_id]) {
         schoolMap[s.school_id] = {
           school_id: s.school_id,
           school_name: s.school_name,
-          total: 0,
-          high: 0,
-          medium: 0,
-          low: 0,
+          total: 0, high: 0, medium: 0, low: 0,
         }
       }
       schoolMap[s.school_id].total++
@@ -27,6 +23,8 @@ router.get("/stats", authMiddleware, async (req, res) => {
     const schools = Object.values(schoolMap)
     const totalStudents = allStudents.length
     const highRisk = allStudents.filter((s) => s.risk_level === "high").length
+    const mediumRisk = allStudents.filter((s) => s.risk_level === "medium").length
+    const lowRisk = allStudents.filter((s) => s.risk_level === "low").length
     const pending = allStudents.filter((s) => s.status === "pending" && s.risk_level === "high").length
 
     res.json({
@@ -35,6 +33,8 @@ router.get("/stats", authMiddleware, async (req, res) => {
         total_schools: schools.length,
         total_students: totalStudents,
         high_risk: highRisk,
+        medium_risk: mediumRisk,
+        low_risk: lowRisk,
         pending_actions: pending,
       }
     })
@@ -69,6 +69,32 @@ router.get("/impact", authMiddleware, async (req, res) => {
       students_actioned: actioned,
       futures_saved: improved || Math.round(actioned * 0.65),
     })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.get("/classwise/:school_id", authMiddleware, async (req, res) => {
+  try {
+    const students = await Student.find({ school_id: req.params.school_id })
+
+    const classMap = {}
+    students.forEach((s) => {
+      const cls = `Class ${s.class_grade}`
+      if (!classMap[cls]) {
+        classMap[cls] = { class: cls, total: 0, high: 0, medium: 0, low: 0 }
+      }
+      classMap[cls].total++
+      if (s.risk_level === "high") classMap[cls].high++
+      else if (s.risk_level === "medium") classMap[cls].medium++
+      else classMap[cls].low++
+    })
+
+    const result = Object.values(classMap).sort((a, b) =>
+      parseInt(a.class.split(" ")[1]) - parseInt(b.class.split(" ")[1])
+    )
+
+    res.json(result)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

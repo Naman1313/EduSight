@@ -174,7 +174,7 @@ def suggest(data: dict):
             f"3. Enroll {name} in Pratham's Teaching at the Right Level (TaRL) remedial program\n"
             f"4. Check enrollment in PM-POSHAN mid-day meal scheme\n"
             f"5. Schedule follow-up visit within 2 weeks to assess improvement\n\n"
-            f"Evidence base: {context[:300]}..."
+            f"Evidence base: {context}"
         )
         source = "ASER 2022 Report, Pratham TaRL Program Guidelines"
         confidence = "high"
@@ -189,7 +189,7 @@ def suggest(data: dict):
             f"3. Connect {name} to school counsellor for academic support\n"
             f"4. Monitor attendance weekly for the next month\n"
             f"5. Consider peer learning group enrollment\n\n"
-            f"Evidence base: {context[:300]}..."
+            f"Evidence base: {context}"
         )
         source = "ASER 2022 Early Warning Protocols"
         confidence = "medium"
@@ -202,7 +202,7 @@ def suggest(data: dict):
             f"1. Include {name} in monthly attendance review\n"
             f"2. Ensure enrollment in PM-POSHAN scheme\n"
             f"3. Check in with teacher at next school visit\n\n"
-            f"Evidence base: {context[:200]}..."
+            f"Evidence base: {context}"
         )
         source = "Standard Monitoring Protocol"
         confidence = "low"
