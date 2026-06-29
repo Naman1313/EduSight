@@ -9,6 +9,7 @@ import { SkeletonCard, SkeletonStatCard } from "@/components/shared/SkeletonCard
 import { ToastContainer } from "@/components/shared/Toast"
 import { useToast } from "@/lib/useToast"
 import AnimatedCounter from "@/components/shared/AnimatedCounter"
+import Confetti from "@/components/shared/Confetti"
 
 export default function StudentsPage() {
     const [students, setStudents] = useState<Student[]>([])
@@ -23,6 +24,7 @@ export default function StudentsPage() {
     const [bulkDone, setBulkDone] = useState(false)
     const { t } = useTranslations()
     const { toasts, toast, removeToast } = useToast()
+    const [showConfetti, setShowConfetti] = useState(false)
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search)
@@ -113,6 +115,10 @@ export default function StudentsPage() {
             setSelectedIds(new Set())
             fetchStudents()
             toast.success(`✓ ${selectedIds.size} students marked as actioned!`)
+            if (selectedIds.size >= 2) {
+                setShowConfetti(true)
+                setTimeout(() => setShowConfetti(false), 3000)
+            }
         } catch (err) {
             console.error(err)
             toast.error("Bulk action failed. Please try again.")
@@ -153,30 +159,30 @@ export default function StudentsPage() {
             {/* Risk tier cards */}
             {!loading && (
                 <div className="grid grid-cols-3 gap-4">
-                {[
-                    { label: "High Risk", count: highRisk, color: "var(--accent-red)", bg: "var(--accent-red-light)", key: "high" },
-                    { label: "Medium Risk", count: mediumRisk, color: "var(--accent-amber)", bg: "var(--accent-amber-light)", key: "medium" },
-                    { label: "Low Risk", count: lowRisk, color: "var(--accent-green)", bg: "var(--accent-green-light)", key: "low" },
-                ].map((tier) => (
-                    <div
-                        key={tier.key}
-                        className="stat-card text-center"
-                        onClick={() => setFilter(tier.key as any)}
-                        style={{
-                            boxShadow: filter === tier.key
-                                ? "var(--shadow-inset)"
-                                : "var(--shadow-raised)",
-                        }}
-                    >
-                        <p className="section-label mb-1">{tier.label}</p>
-                        <p
-                            className="risk-score-display"
-                            style={{ fontSize: "2.5rem", color: tier.color, lineHeight: 1 }}
+                    {[
+                        { label: "High Risk", count: highRisk, color: "var(--accent-red)", bg: "var(--accent-red-light)", key: "high" },
+                        { label: "Medium Risk", count: mediumRisk, color: "var(--accent-amber)", bg: "var(--accent-amber-light)", key: "medium" },
+                        { label: "Low Risk", count: lowRisk, color: "var(--accent-green)", bg: "var(--accent-green-light)", key: "low" },
+                    ].map((tier) => (
+                        <div
+                            key={tier.key}
+                            className="stat-card text-center"
+                            onClick={() => setFilter(tier.key as any)}
+                            style={{
+                                boxShadow: filter === tier.key
+                                    ? "var(--shadow-inset)"
+                                    : "var(--shadow-raised)",
+                            }}
                         >
-                            <AnimatedCounter value={tier.count} duration={1000} />
-                        </p>
-                    </div>
-                ))}
+                            <p className="section-label mb-1">{tier.label}</p>
+                            <p
+                                className="risk-score-display"
+                                style={{ fontSize: "2.5rem", color: tier.color, lineHeight: 1 }}
+                            >
+                                <AnimatedCounter value={tier.count} duration={1000} />
+                            </p>
+                        </div>
+                    ))}
                 </div>
             )}
 
@@ -376,6 +382,8 @@ export default function StudentsPage() {
                     ))}
                 </div>
             )}
+            <Confetti trigger={showConfetti} count={6} />
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
 
             <ToastContainer toasts={toasts} onRemove={removeToast} />
 

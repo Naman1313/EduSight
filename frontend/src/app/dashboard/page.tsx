@@ -11,6 +11,7 @@ import { ToastContainer } from "@/components/shared/Toast"
 import { useToast } from "@/lib/useToast"
 import AnimatedCounter from "@/components/shared/AnimatedCounter"
 
+
 interface Stats {
     total_schools: number
     total_students: number
@@ -27,6 +28,14 @@ interface SchoolStat {
     low: number
 }
 
+interface ImpactStats {
+    total_students: number
+    high_risk_flagged: number
+    interventions_logged: number
+    students_actioned: number
+    futures_saved: number
+}
+
 export default function DashboardPage() {
     const [file, setFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
@@ -37,9 +46,13 @@ export default function DashboardPage() {
     const [schools, setSchools] = useState<SchoolStat[]>([])
     const [statsLoading, setStatsLoading] = useState(true)
     const { toasts, toast, removeToast } = useToast()
+    const [impact, setImpact] = useState<ImpactStats | null>(null)
     const { t } = useTranslations()
 
-    useEffect(() => { fetchStats() }, [])
+    useEffect(() => {
+        fetchStats()
+        fetchImpact()
+    }, [])
 
     const fetchStats = async () => {
         setStatsLoading(true)
@@ -51,6 +64,16 @@ export default function DashboardPage() {
             if (res.ok) { setStats(data.stats); setSchools(data.schools) }
         } catch { console.error("Could not fetch stats") }
         finally { setStatsLoading(false) }
+    }
+
+    const fetchImpact = async () => {
+        try {
+            const res = await fetch("http://localhost:5000/api/schools/impact", {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            })
+            const data = await res.json()
+            if (res.ok) setImpact(data)
+        } catch { console.error("Could not fetch impact") }
     }
 
     const handleFile = (f: File) => {
@@ -128,6 +151,119 @@ export default function DashboardPage() {
                     {t.dashboard.subtitle}
                 </p>
             </div>
+
+            {/* Live Impact Banner */}
+            {impact && (
+                <div
+                    style={{
+                        background: "linear-gradient(135deg, #4361EE15 0%, #2DC65315 50%, #4361EE10 100%)",
+                        boxShadow: "var(--shadow-raised)",
+                        borderRadius: "1.25rem",
+                        padding: "1.5rem",
+                        position: "relative",
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* Decorative background circles */}
+                    <div style={{
+                        position: "absolute",
+                        top: "-30px",
+                        right: "-30px",
+                        width: "120px",
+                        height: "120px",
+                        borderRadius: "50%",
+                        background: "var(--accent-blue)",
+                        opacity: 0.05,
+                    }} />
+                    <div style={{
+                        position: "absolute",
+                        bottom: "-20px",
+                        left: "20%",
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        background: "var(--accent-green)",
+                        opacity: 0.07,
+                    }} />
+
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <p className="section-label mb-1">Live impact</p>
+                            <p style={{
+                                fontSize: "15px",
+                                fontWeight: 700,
+                                color: "var(--text-primary)",
+                                lineHeight: 1.4,
+                                maxWidth: "420px",
+                            }}>
+                                EduSight has flagged{" "}
+                                <span style={{ color: "var(--accent-red)", fontFamily: "'JetBrains Mono', monospace" }}>
+                                    <AnimatedCounter value={impact.high_risk_flagged} duration={1500} />
+                                </span>
+                                {" "}at-risk students, logged{" "}
+                                <span style={{ color: "var(--accent-blue)", fontFamily: "'JetBrains Mono', monospace" }}>
+                                    <AnimatedCounter value={impact.interventions_logged} duration={1500} />
+                                </span>
+                                {" "}interventions, and potentially saved{" "}
+                                <span style={{ color: "var(--accent-green)", fontFamily: "'JetBrains Mono', monospace" }}>
+                                    <AnimatedCounter value={impact.futures_saved} duration={2000} />
+                                </span>
+                                {" "}educational futures.
+                            </p>
+                        </div>
+
+                        <div
+                            style={{
+                                flexShrink: 0,
+                                width: "56px",
+                                height: "56px",
+                                borderRadius: "1rem",
+                                background: "var(--neu-bg)",
+                                boxShadow: "var(--shadow-raised-sm)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "24px",
+                            }}
+                        >
+                            🎓
+                        </div>
+                    </div>
+
+                    {/* Mini stats row */}
+                    <div
+                        className="grid grid-cols-3 gap-3 mt-4 pt-4"
+                        style={{ borderTop: "1px solid rgba(67, 97, 238, 0.1)" }}
+                    >
+                        {[
+                            { label: "Students monitored", value: impact.total_students, color: "var(--accent-blue)" },
+                            { label: "Actions taken", value: impact.students_actioned, color: "var(--accent-amber)" },
+                            { label: "Futures saved", value: impact.futures_saved, color: "var(--accent-green)" },
+                        ].map((item) => (
+                            <div
+                                key={item.label}
+                                style={{
+                                    background: "var(--neu-bg)",
+                                    boxShadow: "var(--shadow-inset-sm)",
+                                    borderRadius: "0.75rem",
+                                    padding: "0.75rem",
+                                    textAlign: "center",
+                                }}
+                            >
+                                <p
+                                    className="risk-score-display"
+                                    style={{ fontSize: "1.5rem", color: item.color, lineHeight: 1 }}
+                                >
+                                    <AnimatedCounter value={item.value} duration={1500} />
+                                </p>
+                                <p style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px", fontWeight: 500 }}>
+                                    {item.label}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
