@@ -43,8 +43,9 @@ export default function OCRPage() {
             const data = await res.json()
             if (!res.ok) throw new Error("OCR failed")
             setResults(data.subjects)
-        } catch {
-            setError("OCR scan failed. Make sure the image is clear and try again.")
+        } catch (err: any) {
+            console.error("OCR Error:", err);
+            setError(err.message || "OCR scan failed. Make sure the image is clear and try again.")
         } finally {
             setScanning(false)
         }
@@ -182,13 +183,20 @@ export default function OCRPage() {
                             justifyContent: "center",
                             gap: "6px",
                             color: file ? "white" : "var(--text-muted)",
+                            cursor: scanning ? "not-allowed" : "pointer"
                         }}
-                        onClick={handleScan}
-                        disabled={!file || scanning}
+                        onClick={() => {
+                            if (!file) {
+                                document.getElementById("ocr-input")?.click();
+                            } else {
+                                handleScan();
+                            }
+                        }}
+                        disabled={scanning}
                     >
                         {scanning
                             ? <><Loader2 size={14} className="animate-spin" /> Scanning...</>
-                            : <><ScanLine size={14} /> Scan mark sheet</>
+                            : <><ScanLine size={14} /> {file ? "Scan mark sheet" : "Select mark sheet"}</>
                         }
                     </button>
                 </div>

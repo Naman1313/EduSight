@@ -1,0 +1,11 @@
+student_id,name,class_grade,school_id,school_name,absences_this_month,absence_streak,math_score,science_score,seasonal_flag,dropout_label
+DEMO001,Ravi Kumar,8,SCH001,Govt. PS Rampur,14,5,28,35,True,1
+DEMO002,Priya Devi,7,SCH002,Govt. PS Nandpur,9,4,42,38,True,0
+DEMO003,Arjun Singh,9,SCH003,Govt. PS Lakhanpur,11,6,31,29,False,1
+DEMO004,Sunita Verma,6,SCH001,Govt. PS Rampur,2,0,78,82,False,0
+DEMO005,Mohammed Asif,8,SCH002,Govt. PS Nandpur,16,8,22,25,True,1
+DEMO006,Kavita Yadav,7,SCH003,Govt. PS Lakhanpur,3,1,71,68,False,0
+DEMO007,Deepak Gupta,6,SCH001,Govt. PS Rampur,17,9,19,24,True,1
+DEMO008,Anita Singh,10,SCH002,Govt. PS Nandpur,12,6,33,30,True,1
+DEMO009,Suresh Pandey,6,SCH003,Govt. PS Lakhanpur,20,8,15,18,True,1
+DEMO010,Lakshmi Bai,9,SCH001,Govt. PS Rampur,1,0,85,79,False,0W8^mhB7&
