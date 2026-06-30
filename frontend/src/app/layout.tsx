@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import Footer from "@/components/shared/Footer"
 
 export const metadata: Metadata = {
   title: "EduSight — Dropout Prevention",
@@ -19,8 +20,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body suppressHydrationWarning style={{ margin: 0 }}>
-        {children}
+      <body suppressHydrationWarning style={{ margin: 0, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: "1 0 auto" }}>
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   )

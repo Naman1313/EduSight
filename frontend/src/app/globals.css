@@ -500,3 +500,19 @@ body {
   background: var(--neu-bg);
   box-shadow: var(--shadow-inset-sm);
 }
+
+/* ===================== PULSE DOT ===================== */
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px #2DC653;
+  }
+
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 12px #2DC653;
+  }
+}

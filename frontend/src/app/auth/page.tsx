@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { GraduationCap, Mail, Lock, AlertCircle } from "lucide-react"
 import { useDarkMode } from "@/lib/useDarkMode"
+import Link from "next/link"
 
 export default function AuthPage() {
     const [email, setEmail] = useState("rajiv@education.gov.in")
@@ -50,42 +51,26 @@ export default function AuthPage() {
 
     return (
         <div
-            className="min-h-screen flex items-center justify-center px-4 py-8"
+            className="min-h-screen flex flex-col"
             style={{ background: "var(--neu-bg)" }}
         >
-            <div className="w-full max-w-md space-y-8">
+            <header className="px-6 py-4 flex items-center">
+                <Link href="/landing" className="flex items-center gap-3" style={{ textDecoration: 'none' }}>
+                    <div style={{
+                        width: "40px", height: "40px", borderRadius: "0.75rem",
+                        background: "var(--neu-bg)", boxShadow: "var(--shadow-raised-sm)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                        <GraduationCap size={22} style={{ color: "var(--accent-blue)" }} />
+                    </div>
+                    <p style={{ fontSize: "24px", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                        EduSight
+                    </p>
+                </Link>
+            </header>
 
-                {/* Header */}
-                <div className="text-center space-y-4">
-                    <div
-                        className="w-20 h-20 mx-auto flex items-center justify-center"
-                        style={{
-                            background: "var(--neu-bg)",
-                            boxShadow: "var(--shadow-raised)",
-                            borderRadius: "1.5rem",
-                        }}
-                    >
-                        <GraduationCap size={36} style={{ color: "var(--accent-blue)" }} />
-                    </div>
-                    <div>
-                        <h1 style={{
-                            fontSize: "2rem",
-                            fontWeight: 700,
-                            color: "var(--text-primary)",
-                            letterSpacing: "-0.04em",
-                        }}>
-                            EduSight
-                        </h1>
-                        <p style={{
-                            fontSize: "13px",
-                            color: "var(--text-muted)",
-                            fontWeight: 500,
-                            marginTop: "4px",
-                        }}>
-                            Dropout Prevention Early Warning System
-                        </p>
-                    </div>
-                </div>
+            <div className="flex-1 flex items-center justify-center px-4 py-8">
+                <div className="w-full max-w-md space-y-8">
 
                 {/* Card */}
                 <div
@@ -231,6 +216,7 @@ export default function AuthPage() {
                 }}>
                     EduSight · Built for India's Block Education Officers
                 </p>
+                </div>
             </div>
         </div>
     )
